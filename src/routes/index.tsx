@@ -68,24 +68,25 @@ function Index() {
       </header>
 
       {/* HERO */}
-      <section className="relative overflow-hidden" style={{ borderBottom: `1px solid ${smoke}` }}>
+      <section className="relative" style={{ borderBottom: `1px solid ${smoke}` }}>
         <div
           aria-hidden
-          className="absolute inset-0 pointer-events-none"
+          className="absolute top-0 right-0 left-0 pointer-events-none"
           style={{
             backgroundImage: `url(${ninjaAsset.url})`,
             backgroundRepeat: "no-repeat",
             backgroundPosition: "center right",
-            backgroundSize: "cover",
-            opacity: 0.85,
-            filter: "brightness(1.4) contrast(1.2)",
+            backgroundSize: "80%",
+            opacity: 0.9,
+            filter: "brightness(1.2) contrast(1.1)",
+            height: "130%",
           }}
         />
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(90deg, ${bg} 0%, ${bg} 45%, rgba(13,15,18,0.25) 70%, rgba(13,15,18,0.45) 100%)`,
+            background: `linear-gradient(90deg, ${bg} 0%, ${bg} 50%, rgba(13,15,18,0.3) 75%, rgba(13,15,18,0.5) 100%)`,
           }}
         />
         <div
