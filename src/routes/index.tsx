@@ -75,16 +75,17 @@ function Index() {
           style={{
             backgroundImage: `url(${ninjaAsset.url})`,
             backgroundRepeat: "no-repeat",
-            backgroundPosition: "right center",
-            backgroundSize: "contain",
-            opacity: 0.4,
+            backgroundPosition: "center right",
+            backgroundSize: "cover",
+            opacity: 0.75,
+            filter: "brightness(1.25) contrast(1.15)",
           }}
         />
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(90deg, ${bg} 0%, ${bg} 35%, rgba(13,15,18,0.55) 70%, rgba(13,15,18,0.85) 100%)`,
+            background: `linear-gradient(90deg, ${bg} 0%, ${bg} 40%, rgba(13,15,18,0.35) 65%, rgba(13,15,18,0.55) 100%)`,
           }}
         />
         <div
