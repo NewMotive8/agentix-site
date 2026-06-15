@@ -77,15 +77,15 @@ function Index() {
             backgroundRepeat: "no-repeat",
             backgroundPosition: "center right",
             backgroundSize: "cover",
-            opacity: 0.75,
-            filter: "brightness(1.25) contrast(1.15)",
+            opacity: 0.85,
+            filter: "brightness(1.4) contrast(1.2)",
           }}
         />
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(90deg, ${bg} 0%, ${bg} 40%, rgba(13,15,18,0.35) 65%, rgba(13,15,18,0.55) 100%)`,
+            background: `linear-gradient(90deg, ${bg} 0%, ${bg} 45%, rgba(13,15,18,0.25) 70%, rgba(13,15,18,0.45) 100%)`,
           }}
         />
         <div
