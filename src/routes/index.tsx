@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import ninjaAsset from "@/assets/nomadd.png.asset.json";
+import ninjaAsset from "@/assets/cut_the_nomad.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -68,27 +68,24 @@ function Index() {
       </header>
 
       {/* HERO */}
-      <section className="relative" style={{ borderBottom: `1px solid ${smoke}` }}>
+      <section className="relative overflow-hidden" style={{ borderBottom: `1px solid ${smoke}` }}>
         <div
           aria-hidden
-          className="absolute top-0 right-0 left-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
             backgroundImage: `url(${ninjaAsset.url})`,
             backgroundRepeat: "no-repeat",
-            backgroundPosition: "bottom 10% right 5%",
-            backgroundSize: "80%",
-            opacity: 1,
-            filter: "brightness(1.6) contrast(1.2) saturate(0.9)",
-            height: "140%",
-            zIndex: 1,
+            backgroundPosition: "center right",
+            backgroundSize: "cover",
+            opacity: 0.85,
+            filter: "brightness(1.4) contrast(1.2)",
           }}
         />
         <div
           aria-hidden
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(90deg, ${bg} 0%, ${bg} 50%, rgba(13,15,18,0.15) 75%, rgba(13,15,18,0.3) 100%)`,
-            zIndex: 2,
+            background: `linear-gradient(90deg, ${bg} 0%, ${bg} 45%, rgba(13,15,18,0.25) 70%, rgba(13,15,18,0.45) 100%)`,
           }}
         />
         <div
