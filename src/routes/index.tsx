@@ -117,11 +117,11 @@ function Index() {
             what comes next.
           </h1>
           <p
-            className="mt-10 text-base md:text-lg leading-relaxed"
+            className="mt-10 text-base md:text-lg leading-relaxed whitespace-pre-line"
             style={{ color: slate, maxWidth: "620px" }}
           >
-            Agentix is a technology development company based in Cyprus. We design
-            high-performance software frameworks and intelligent systems, currently operating in
+            Agentix is a technology development company based in Limassol.{"\u00a0"}{"\n"}
+            We design high-performance software frameworks and intelligent systems, currently operating in
             stealth as we prepare our foundational ecosystem.
           </p>
         </div>
