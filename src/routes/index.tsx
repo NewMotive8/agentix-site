@@ -130,7 +130,7 @@ function Index() {
             className="mt-10 text-base md:text-lg leading-relaxed whitespace-pre-line"
             style={{ color: slate, maxWidth: "720px" }}
           >
-            Agentix is a technology development company based in Cyprus.{"\u00a0"}{"\n"}
+            Agentix is a technology development company.{"\u00a0"}{"\n"}
             We design high-performance software frameworks and intelligent systems, currently operating in
             stealth as we prepare our foundational ecosystem.
           </p>
