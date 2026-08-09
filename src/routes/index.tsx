@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import ninjaAsset from "@/assets/nomad5_final.png.asset.json";
+import markAsset from "@/assets/agentix-mark.png.asset.json";
+import logoAsset from "@/assets/agentix-logo.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,8 +43,17 @@ function Index() {
         }}
       >
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 flex items-center justify-between h-16">
-          <div className="text-sm font-semibold tracking-[0.3em]" style={{ color: off }}>
-            AGENTIX
+          <div className="flex items-center gap-3">
+            <img
+              src={markAsset.url}
+              alt="Agentix logo"
+              width={465}
+              height={522}
+              className="h-8 w-auto"
+            />
+            <span className="text-sm font-semibold tracking-[0.3em]" style={{ color: off }}>
+              AGENTIX
+            </span>
           </div>
           <div
             className="hidden sm:flex items-center gap-2 font-mono-tech text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 rounded-sm"
@@ -261,8 +272,16 @@ function Index() {
       <footer style={{ backgroundColor: black }}>
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-20 grid grid-cols-1 md:grid-cols-2 gap-12">
           <div>
+            <img
+              src={logoAsset.url}
+              alt="Agentix"
+              width={793}
+              height={746}
+              loading="lazy"
+              className="h-20 w-auto"
+            />
             <div
-              className="font-mono-tech font-bold text-sm tracking-[0.15em]"
+              className="mt-4 font-mono-tech font-bold text-sm tracking-[0.15em]"
               style={{ color: off }}
             >
               AGENTIX LTD
