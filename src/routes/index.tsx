@@ -183,7 +183,7 @@ function Index() {
           >
             02 // Areas of Focus
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 n: "001",
@@ -200,10 +200,15 @@ function Index() {
                 t: "Systemic Optimization",
                 d: "Refining the subtle mechanics where user experience and complex software engineering meet, ensuring stability at scale.",
               },
+              {
+                n: "004",
+                t: "Strategic Defense Procurement",
+                d: "Serving as the integration layer between elite global suppliers and complex defense ecosystems. We engineer bespoke procurement strategies backed by uncompromising quality control and precise, secure project management.",
+              },
             ].map((c, i) => (
               <div
                 key={c.n}
-                className="px-0 md:px-10 py-10 md:py-4"
+                className="px-0 md:px-8 py-10 md:py-4"
                 style={{ borderLeft: i === 0 ? "none" : `1px solid ${smoke}` }}
               >
                 <div
