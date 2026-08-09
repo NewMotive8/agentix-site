@@ -273,12 +273,12 @@ function Index() {
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-20 grid grid-cols-1 md:grid-cols-2 gap-12">
           <div>
             <img
-              src={logoAsset.url}
+              src={markAsset.url}
               alt="Agentix"
-              width={793}
-              height={746}
+              width={465}
+              height={522}
               loading="lazy"
-              className="h-20 w-auto"
+              className="h-16 w-auto"
             />
             <div
               className="mt-4 font-mono-tech font-bold text-sm tracking-[0.15em]"
