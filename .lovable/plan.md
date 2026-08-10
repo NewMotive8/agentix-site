@@ -1,13 +1,32 @@
-# Procurement Hunter — In-App Manual
+# Procurement Hunter — Readability Overhaul + In-App Manual
 
-A built-in manual page for the hunting tool, reachable at any time from the sidebar. It combines a one-screen quick reference with a full step-by-step walkthrough on the same page, so you can skim or read deeply.
+Two parts: first make the tool comfortable to read, then add a manual you can open whenever you need a refresher.
+
+## Part 1 — Readability pass (priority)
+
+The current screen is terminal-dense: 10-11px type, all-caps with wide letter spacing, mid-grey text on near-black. That is the main problem. Changes:
+
+- **Bigger text everywhere.** Body and data text goes from ~11px to 15-16px; card titles to 19px; sidebar labels to 14px. Nothing below 13px anywhere on the page.
+- **Higher contrast.** Labels move from mid-grey to a light grey that clearly passes contrast on the dark background. Option included: a light "high-contrast day" mode toggle (dark text on white) if you prefer that for long sessions — the toggle sits in the header and remembers your choice.
+- **Kill the all-caps + wide letter spacing** on anything longer than a couple of words. Headings become normal sentence case, which reads far faster.
+- **Readable font.** Data values (prices, NSNs, quantities) stay monospace so columns line up; all prose, labels and headings switch to a clean sans-serif.
+- **More breathing room.** Card padding, line height (1.6 on prose) and spacing between rows increase; each opportunity card gets clear internal separation between the header, metadata, badges, economics and summary blocks.
+- **Fewer things per row.** Card metadata and economics stack into labelled pairs (label above value) instead of a crowded single line, so nothing has to be hunted for.
+- **Bigger, clearer buttons.** Investigate / Save / Dismiss become full-size buttons with icons and normal-case text, comfortably clickable.
+- **Colour used sparingly and meaningfully.** Green = good, amber = caution, red = risk, everything else neutral. Score badge gets larger numerals and a plain-language word under it (Strong / Moderate / Weak).
+- **Sidebar clarity.** Wider sidebar, larger slider handles and value readouts, checkbox labels at full size, and a short one-line explanation under each parameter so you never have to guess what it filters.
+- **Investigation drawer.** Wider panel, larger table text, generous row height, and the economics waterfall in a bigger monospace block with clear labels.
+
+## Part 2 — In-App Manual
+
+A built-in manual page, reachable at any time from the sidebar. It combines a one-screen quick reference with a full step-by-step walkthrough on the same page, so you can skim or read deeply. Written in the same enlarged, high-contrast style.
 
 ## Where it lives
 
 - New page at `/hunter/manual`.
 - A small `HELP / MANUAL` button in the Hunt Controls header (next to the crosshair title) opens it.
 - A `BACK TO HUNT` link at the top of the manual returns you to the hunting screen.
-- Same terminal aesthetic: dark zinc background, monospace, green/amber/blue accents.
+- Large readable type, generous spacing, and short paragraphs — no dense terminal text.
 
 ## Page structure
 
@@ -32,6 +51,8 @@ A built-in manual page for the hunting tool, reachable at any time from the side
 
 ## Technical notes
 
+- Readability work is presentation-only: type scale, contrast tokens and spacing in `src/styles.css` (a `.hunter` scope replacing the tight `.terminal` sizing for this page), plus className changes in `HuntControls.tsx`, `OpportunityCard.tsx` and `InvestigationDrawer.tsx`. Hunt logic and mock data are untouched.
+- Optional light mode is a class toggle on the page container with a matching token set; preference stored in `localStorage`.
 - New route file `src/routes/hunter.manual.tsx` with its own `head()` metadata. Because `hunter.tsx` currently renders the page directly, it becomes a layout rendering `<Outlet />`, and the existing hunting screen moves to `src/routes/hunter.index.tsx` unchanged — the URL `/hunter` keeps working exactly as today.
-- Manual content lives in `src/lib/hunter-manual.ts` as structured data (sections, rows, glossary entries), rendered by a small `src/components/hunter/ManualSection.tsx`, so preset and parameter descriptions stay consistent with `hunter-data.ts`.
+- Manual content lives in `src/lib/hunter-manual.ts` as structured data (sections, rows, glossary entries), rendered by a small `src/components/hunter/ManualSection.tsx`, so descriptions stay consistent with `hunter-data.ts`.
 - Static content only: no backend, no new dependencies. Uses existing shadcn primitives and Lucide icons.
