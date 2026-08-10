@@ -1,38 +1,59 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Bookmark, Search, X, Calendar, Package, Hash } from "lucide-react";
+import { Bookmark, Search, X } from "lucide-react";
 import type { Opportunity } from "@/lib/hunter-data";
 
 export const currency = (v: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(v);
 
-export function LevelBadge({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: "good" | "warn" | "bad" | "info";
-}) {
-  const tones = {
-    good: "border-primary/50 bg-primary/10 text-primary",
-    warn: "border-signal-amber/50 bg-signal-amber/10 text-signal-amber",
-    bad: "border-border bg-muted text-muted-foreground",
-    info: "border-signal-blue/50 bg-signal-blue/10 text-signal-blue",
-  } as const;
-  return (
-    <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-      {label}:
-      <span className={cn("rounded-sm border px-1.5 py-0.5 font-bold", tones[tone])}>{value}</span>
-    </span>
-  );
-}
+export type Tone = "good" | "warn" | "bad" | "info";
 
-export function toneFor(v: string): "good" | "warn" | "bad" {
+export const TONE_CLASS: Record<Tone, string> = {
+  good: "border-primary/60 bg-primary/15 text-primary",
+  warn: "border-signal-amber/60 bg-signal-amber/15 text-signal-amber",
+  bad: "border-border bg-muted text-muted-foreground",
+  info: "border-signal-blue/60 bg-signal-blue/15 text-signal-blue",
+};
+
+export function toneFor(v: string): Tone {
   if (v === "HIGH" || v === "VERY HIGH") return "good";
   if (v === "MED") return "warn";
   return "bad";
+}
+
+const READABLE: Record<string, string> = {
+  "VERY HIGH": "Very high",
+  HIGH: "High",
+  MED: "Medium",
+  LOW: "Low",
+  "VERY LOW": "Very low",
+};
+
+export function LevelBadge({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[13px] text-muted-foreground">{label}</div>
+      <span
+        className={cn(
+          "mt-1 inline-block rounded-md border px-2.5 py-1 text-[15px] font-bold",
+          TONE_CLASS[toneFor(value)],
+        )}
+      >
+        {READABLE[value] ?? value}
+      </span>
+    </div>
+  );
+}
+
+function Stat({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div>
+      <div className="text-[13px] text-muted-foreground">{label}</div>
+      <div className={cn("data mt-0.5 text-[17px]", strong ? "font-bold text-primary" : "font-semibold")}>
+        {value}
+      </div>
+    </div>
+  );
 }
 
 export function OpportunityCard({
@@ -48,94 +69,68 @@ export function OpportunityCard({
   onSave: () => void;
   onDismiss: () => void;
 }) {
-  const scoreTone =
+  const band =
     opp.score > 80
-      ? "border-primary/60 bg-primary/15 text-primary"
+      ? { cls: "border-primary bg-primary/15 text-primary", word: "Strong" }
       : opp.score > 60
-        ? "border-signal-amber/60 bg-signal-amber/10 text-signal-amber"
-        : "border-border bg-muted text-muted-foreground";
+        ? { cls: "border-signal-amber bg-signal-amber/15 text-signal-amber", word: "Moderate" }
+        : { cls: "border-border bg-muted text-muted-foreground", word: "Weak" };
 
   return (
-    <article className="rounded-sm border border-border bg-card/60 p-4 transition-colors hover:border-primary/40">
-      <div className="flex items-start justify-between gap-4">
+    <article className="rounded-lg border border-border bg-card p-6 shadow-sm">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-5">
         <div className="min-w-0">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            {opp.agency} — {opp.solicitation}
-            <span className="ml-2 text-signal-blue">{opp.sourceLabel}</span>
+          <div className="text-[14px] text-muted-foreground">
+            {opp.agency} · Solicitation <span className="data">{opp.solicitation}</span> ·{" "}
+            <span className="font-semibold text-signal-blue">{opp.sourceLabel}</span>
           </div>
-          <h3 className="mt-1 text-[13px] font-bold tracking-tight">{opp.product}</h3>
+          <h3 className="mt-1.5 text-[21px] font-bold leading-snug">{opp.product}</h3>
         </div>
-        <div className={cn("shrink-0 rounded-sm border px-2.5 py-1 text-center", scoreTone)}>
-          <div className="text-[9px] uppercase tracking-[0.15em] opacity-80">Opportunity Score</div>
-          <div className="text-base font-bold tabular-nums leading-tight">{opp.score}/100</div>
+        <div className={cn("shrink-0 rounded-lg border-2 px-4 py-2 text-center", band.cls)}>
+          <div className="data text-[30px] font-bold leading-none">{opp.score}</div>
+          <div className="text-[13px] font-semibold">out of 100</div>
+          <div className="text-[14px] font-bold">{band.word}</div>
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[11px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
-          <Hash className="h-3 w-3" />
-          <span className="tabular-nums text-foreground">{opp.nsn}</span> / {opp.partNumber}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <Package className="h-3 w-3" />
-          QTY <span className="tabular-nums text-foreground">{opp.quantity} EA</span>
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <Calendar className="h-3 w-3" />
-          DEADLINE <span className="tabular-nums text-foreground">{opp.deadline}</span>
-        </span>
+      <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-3">
+        <Stat label="NSN / Part number" value={`${opp.nsn}  ${opp.partNumber}`} />
+        <Stat label="Quantity" value={`${opp.quantity} units`} />
+        <Stat label="Bid deadline" value={opp.deadline} />
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-        <LevelBadge label="Historical Demand" value={opp.demand} tone={toneFor(opp.demand)} />
-        <LevelBadge label="Source Accessibility" value={opp.accessibility} tone={toneFor(opp.accessibility)} />
-        <LevelBadge label="Pricing Confidence" value={opp.pricingConfidence} tone={toneFor(opp.pricingConfidence)} />
+      <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-3">
+        <LevelBadge label="Past demand for this part" value={opp.demand} />
+        <LevelBadge label="How easy to source" value={opp.accessibility} />
+        <LevelBadge label="Confidence in pricing" value={opp.pricingConfidence} />
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-x-8 gap-y-1 border-y border-border py-2 text-[11px]">
-        <span className="text-muted-foreground">
-          EST. VALUE <span className="ml-1 tabular-nums text-foreground">{currency(opp.estValue)}</span>
-        </span>
-        <span className="text-muted-foreground">
-          EST. MARGIN <span className="ml-1 tabular-nums text-primary">{opp.estMargin}%</span>
-        </span>
-        <span className="text-muted-foreground">
-          EST. GROSS PROFIT{" "}
-          <span className="ml-1 tabular-nums text-primary">{currency(opp.estGrossProfit)}</span>
-        </span>
+      <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-3">
+        <Stat label="Contract value" value={currency(opp.estValue)} />
+        <Stat label="Estimated margin" value={`${opp.estMargin}%`} strong />
+        <Stat label="Estimated gross profit" value={currency(opp.estGrossProfit)} strong />
       </div>
 
-      <p className="mt-3 max-w-4xl text-[11px] leading-relaxed text-muted-foreground">
-        <span className="text-signal-blue">AI // </span>
-        {opp.aiSummary}
-      </p>
+      <div className="mt-5 rounded-md border border-border bg-muted/40 p-4">
+        <div className="text-[13px] font-semibold uppercase tracking-wide text-signal-blue">
+          Analysis
+        </div>
+        <p className="mt-1.5 text-[16px] leading-relaxed text-foreground">{opp.aiSummary}</p>
+      </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button
-          onClick={onInvestigate}
-          size="sm"
-          className="h-7 gap-1.5 rounded-sm text-[10px] font-bold uppercase tracking-[0.18em]"
-        >
-          <Search className="h-3 w-3" /> Investigate
+      <div className="mt-5 flex flex-wrap gap-3">
+        <Button onClick={onInvestigate} className="h-12 gap-2 px-6 text-[16px] font-bold">
+          <Search className="h-5 w-5" /> Investigate
         </Button>
         <Button
           onClick={onSave}
-          size="sm"
           variant="outline"
-          className={cn(
-            "h-7 gap-1.5 rounded-sm text-[10px] font-bold uppercase tracking-[0.18em]",
-            saved && "border-primary/60 text-primary",
-          )}
+          className={cn("h-12 gap-2 px-5 text-[16px]", saved && "border-primary text-primary")}
         >
-          <Bookmark className="h-3 w-3" /> {saved ? "Saved" : "Save"}
+          <Bookmark className="h-5 w-5" /> {saved ? "Saved" : "Save"}
         </Button>
-        <Button
-          onClick={onDismiss}
-          size="sm"
-          variant="ghost"
-          className="h-7 gap-1.5 rounded-sm text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground"
-        >
-          <X className="h-3 w-3" /> Dismiss
+        <Button onClick={onDismiss} variant="ghost" className="h-12 gap-2 px-5 text-[16px]">
+          <X className="h-5 w-5" /> Dismiss
         </Button>
       </div>
     </article>
