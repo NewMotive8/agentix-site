@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useHunterLight } from "@/lib/hunter-theme";
 import {
   defaultParams,
+  explainHunt,
   opportunities,
   runHunt,
   type HuntParams,
@@ -45,11 +46,13 @@ function HunterPage() {
   const [active, setActive] = useState<Opportunity | null>(null);
   const [saved, setSaved] = useState<string[]>([]);
   const [dismissed, setDismissed] = useState<string[]>([]);
+  const [diag, setDiag] = useState(() => explainHunt(defaultParams, opportunities));
 
   const start = () => {
     setRunning(true);
     window.setTimeout(() => {
       setResults(runHunt(params, opportunities));
+      setDiag(explainHunt(params, opportunities));
       setDismissed([]);
       setRunning(false);
     }, 1500);
@@ -68,7 +71,9 @@ function HunterPage() {
           <h2 className="text-[20px] font-bold">Opportunities</h2>
           <div className="flex items-center gap-4">
             <span className="text-[16px] font-semibold text-primary">
-              {running ? "Searching…" : `${visible.length} results, best first`}
+              {running
+                ? "Searching…"
+                : `${visible.length} of ${diag.total} opportunities, best first`}
             </span>
             <Button variant="outline" size="sm" onClick={toggle} className="h-10 gap-2 text-[14px]">
               {light ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
@@ -94,6 +99,20 @@ function HunterPage() {
             </div>
           ) : (
             <div className="mx-auto max-w-5xl space-y-6">
+              {diag.excluded.length > 0 && (
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-[15px] font-semibold">
+                    {diag.total - diag.matched} opportunities were filtered out by your settings:
+                  </p>
+                  <ul className="mt-2 space-y-1 text-[15px] text-muted-foreground">
+                    {diag.excluded.map((e) => (
+                      <li key={e.reason}>
+                        <span className="data font-bold text-foreground">{e.count}</span> — {e.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {visible.map((opp) => (
                 <OpportunityCard
                   key={opp.id}
