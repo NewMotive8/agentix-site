@@ -13,6 +13,7 @@ import { Route as HunterRouteImport } from './routes/hunter'
 import { Route as EngineRouteImport } from './routes/engine'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HunterIndexRouteImport } from './routes/hunter.index'
+import { Route as HunterManualRouteImport } from './routes/hunter.manual'
 import { Route as DemoAgency2RouteImport } from './routes/demo.agency2'
 import { Route as DemoAgencyRouteImport } from './routes/demo.agency'
 
@@ -36,6 +37,11 @@ const HunterIndexRoute = HunterIndexRouteImport.update({
   path: '/',
   getParentRoute: () => HunterRoute,
 } as any)
+const HunterManualRoute = HunterManualRouteImport.update({
+  id: '/manual',
+  path: '/manual',
+  getParentRoute: () => HunterRoute,
+} as any)
 const DemoAgency2Route = DemoAgency2RouteImport.update({
   id: '/demo/agency2',
   path: '/demo/agency2',
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/hunter': typeof HunterRouteWithChildren
   '/demo/agency': typeof DemoAgencyRoute
   '/demo/agency2': typeof DemoAgency2Route
+  '/hunter/manual': typeof HunterManualRoute
   '/hunter/': typeof HunterIndexRoute
 }
 export interface FileRoutesByTo {
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/engine': typeof EngineRoute
   '/demo/agency': typeof DemoAgencyRoute
   '/demo/agency2': typeof DemoAgency2Route
+  '/hunter/manual': typeof HunterManualRoute
   '/hunter': typeof HunterIndexRoute
 }
 export interface FileRoutesById {
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/hunter': typeof HunterRouteWithChildren
   '/demo/agency': typeof DemoAgencyRoute
   '/demo/agency2': typeof DemoAgency2Route
+  '/hunter/manual': typeof HunterManualRoute
   '/hunter/': typeof HunterIndexRoute
 }
 export interface FileRouteTypes {
@@ -79,9 +88,16 @@ export interface FileRouteTypes {
     | '/hunter'
     | '/demo/agency'
     | '/demo/agency2'
+    | '/hunter/manual'
     | '/hunter/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/engine' | '/demo/agency' | '/demo/agency2' | '/hunter'
+  to:
+    | '/'
+    | '/engine'
+    | '/demo/agency'
+    | '/demo/agency2'
+    | '/hunter/manual'
+    | '/hunter'
   id:
     | '__root__'
     | '/'
@@ -89,6 +105,7 @@ export interface FileRouteTypes {
     | '/hunter'
     | '/demo/agency'
     | '/demo/agency2'
+    | '/hunter/manual'
     | '/hunter/'
   fileRoutesById: FileRoutesById
 }
@@ -130,6 +147,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HunterIndexRouteImport
       parentRoute: typeof HunterRoute
     }
+    '/hunter/manual': {
+      id: '/hunter/manual'
+      path: '/manual'
+      fullPath: '/hunter/manual'
+      preLoaderRoute: typeof HunterManualRouteImport
+      parentRoute: typeof HunterRoute
+    }
     '/demo/agency2': {
       id: '/demo/agency2'
       path: '/demo/agency2'
@@ -148,10 +172,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface HunterRouteChildren {
+  HunterManualRoute: typeof HunterManualRoute
   HunterIndexRoute: typeof HunterIndexRoute
 }
 
 const HunterRouteChildren: HunterRouteChildren = {
+  HunterManualRoute: HunterManualRoute,
   HunterIndexRoute: HunterIndexRoute,
 }
 
@@ -168,3 +194,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
