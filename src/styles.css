@@ -180,6 +180,7 @@
   --input: oklch(0.28 0.006 265);
   --ring: oklch(0.72 0.19 150);
   --signal-amber: oklch(0.8 0.16 78);
+  --signal-blue: oklch(0.72 0.13 235);
   --radius: 0.25rem;
 
   background-color: var(--background);
@@ -189,4 +190,5 @@
 
 @theme inline {
   --color-signal-amber: var(--signal-amber);
+  --color-signal-blue: var(--signal-blue);
 }

@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as HunterRouteImport } from './routes/hunter'
 import { Route as EngineRouteImport } from './routes/engine'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DemoAgency2RouteImport } from './routes/demo.agency2'
 import { Route as DemoAgencyRouteImport } from './routes/demo.agency'
 
+const HunterRoute = HunterRouteImport.update({
+  id: '/hunter',
+  path: '/hunter',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EngineRoute = EngineRouteImport.update({
   id: '/engine',
   path: '/engine',
@@ -38,12 +44,14 @@ const DemoAgencyRoute = DemoAgencyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/engine': typeof EngineRoute
+  '/hunter': typeof HunterRoute
   '/demo/agency': typeof DemoAgencyRoute
   '/demo/agency2': typeof DemoAgency2Route
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/engine': typeof EngineRoute
+  '/hunter': typeof HunterRoute
   '/demo/agency': typeof DemoAgencyRoute
   '/demo/agency2': typeof DemoAgency2Route
 }
@@ -51,26 +59,41 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/engine': typeof EngineRoute
+  '/hunter': typeof HunterRoute
   '/demo/agency': typeof DemoAgencyRoute
   '/demo/agency2': typeof DemoAgency2Route
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/engine' | '/demo/agency' | '/demo/agency2'
+  fullPaths: '/' | '/engine' | '/hunter' | '/demo/agency' | '/demo/agency2'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/engine' | '/demo/agency' | '/demo/agency2'
-  id: '__root__' | '/' | '/engine' | '/demo/agency' | '/demo/agency2'
+  to: '/' | '/engine' | '/hunter' | '/demo/agency' | '/demo/agency2'
+  id:
+    | '__root__'
+    | '/'
+    | '/engine'
+    | '/hunter'
+    | '/demo/agency'
+    | '/demo/agency2'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EngineRoute: typeof EngineRoute
+  HunterRoute: typeof HunterRoute
   DemoAgencyRoute: typeof DemoAgencyRoute
   DemoAgency2Route: typeof DemoAgency2Route
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/hunter': {
+      id: '/hunter'
+      path: '/hunter'
+      fullPath: '/hunter'
+      preLoaderRoute: typeof HunterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/engine': {
       id: '/engine'
       path: '/engine'
@@ -105,6 +128,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EngineRoute: EngineRoute,
+  HunterRoute: HunterRoute,
   DemoAgencyRoute: DemoAgencyRoute,
   DemoAgency2Route: DemoAgency2Route,
 }
