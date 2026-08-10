@@ -62,8 +62,8 @@ export const defaultParams: HuntParams = {
   minMargin: 20,
   minValue: 100000,
   maxIncumbents: 3,
-  fscCodes: ["1650", "2530", "4820"],
-  sources: { sam: true, dibbs: true, nspa: true, ncia: false },
+  fscCodes: [],
+  sources: { sam: true, dibbs: true, nspa: true, ncia: true },
 };
 
 export type PresetKey = "anchor" | "cluster" | "capital" | "nato" | "repeat";
@@ -1270,4 +1270,33 @@ export function runHunt(params: HuntParams, data: Opportunity[]): Opportunity[] 
       return true;
     })
     .sort((a, b) => b.score - a.score);
+}
+
+export type HuntDiagnostics = {
+  total: number;
+  matched: number;
+  excluded: { reason: string; count: number }[];
+};
+
+export function explainHunt(params: HuntParams, data: Opportunity[]): HuntDiagnostics {
+  const counts: Record<string, number> = {};
+  let matched = 0;
+  for (const o of data) {
+    let reason: string | null = null;
+    if (!params.sources[o.source]) reason = `Source not selected (${o.sourceLabel})`;
+    else if (o.estMargin < params.minMargin) reason = `Margin below ${params.minMargin}%`;
+    else if (o.estValue < params.minValue) reason = "Contract value too small";
+    else if (o.incumbents > params.maxIncumbents) reason = `More than ${params.maxIncumbents} competitors`;
+    else if (params.fscCodes.length > 0 && !params.fscCodes.includes(o.fsc))
+      reason = "FSC code not in your list";
+    if (reason) counts[reason] = (counts[reason] ?? 0) + 1;
+    else matched += 1;
+  }
+  return {
+    total: data.length,
+    matched,
+    excluded: Object.entries(counts)
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((a, b) => b.count - a.count),
+  };
 }
