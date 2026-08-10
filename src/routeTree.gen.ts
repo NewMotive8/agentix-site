@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as HunterRouteImport } from './routes/hunter'
 import { Route as EngineRouteImport } from './routes/engine'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HunterIndexRouteImport } from './routes/hunter.index'
 import { Route as DemoAgency2RouteImport } from './routes/demo.agency2'
 import { Route as DemoAgencyRouteImport } from './routes/demo.agency'
 
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HunterIndexRoute = HunterIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => HunterRoute,
+} as any)
 const DemoAgency2Route = DemoAgency2RouteImport.update({
   id: '/demo/agency2',
   path: '/demo/agency2',
@@ -44,30 +50,38 @@ const DemoAgencyRoute = DemoAgencyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/engine': typeof EngineRoute
-  '/hunter': typeof HunterRoute
+  '/hunter': typeof HunterRouteWithChildren
   '/demo/agency': typeof DemoAgencyRoute
   '/demo/agency2': typeof DemoAgency2Route
+  '/hunter/': typeof HunterIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/engine': typeof EngineRoute
-  '/hunter': typeof HunterRoute
   '/demo/agency': typeof DemoAgencyRoute
   '/demo/agency2': typeof DemoAgency2Route
+  '/hunter': typeof HunterIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/engine': typeof EngineRoute
-  '/hunter': typeof HunterRoute
+  '/hunter': typeof HunterRouteWithChildren
   '/demo/agency': typeof DemoAgencyRoute
   '/demo/agency2': typeof DemoAgency2Route
+  '/hunter/': typeof HunterIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/engine' | '/hunter' | '/demo/agency' | '/demo/agency2'
+  fullPaths:
+    | '/'
+    | '/engine'
+    | '/hunter'
+    | '/demo/agency'
+    | '/demo/agency2'
+    | '/hunter/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/engine' | '/hunter' | '/demo/agency' | '/demo/agency2'
+  to: '/' | '/engine' | '/demo/agency' | '/demo/agency2' | '/hunter'
   id:
     | '__root__'
     | '/'
@@ -75,12 +89,13 @@ export interface FileRouteTypes {
     | '/hunter'
     | '/demo/agency'
     | '/demo/agency2'
+    | '/hunter/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EngineRoute: typeof EngineRoute
-  HunterRoute: typeof HunterRoute
+  HunterRoute: typeof HunterRouteWithChildren
   DemoAgencyRoute: typeof DemoAgencyRoute
   DemoAgency2Route: typeof DemoAgency2Route
 }
@@ -108,6 +123,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hunter/': {
+      id: '/hunter/'
+      path: '/'
+      fullPath: '/hunter/'
+      preLoaderRoute: typeof HunterIndexRouteImport
+      parentRoute: typeof HunterRoute
+    }
     '/demo/agency2': {
       id: '/demo/agency2'
       path: '/demo/agency2'
@@ -125,23 +147,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface HunterRouteChildren {
+  HunterIndexRoute: typeof HunterIndexRoute
+}
+
+const HunterRouteChildren: HunterRouteChildren = {
+  HunterIndexRoute: HunterIndexRoute,
+}
+
+const HunterRouteWithChildren =
+  HunterRoute._addFileChildren(HunterRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EngineRoute: EngineRoute,
-  HunterRoute: HunterRoute,
+  HunterRoute: HunterRouteWithChildren,
   DemoAgencyRoute: DemoAgencyRoute,
   DemoAgency2Route: DemoAgency2Route,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
