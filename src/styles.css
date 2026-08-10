@@ -157,3 +157,36 @@
 .pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
 
 .font-mono-tech { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace; }
+
+/* Bloomberg-terminal palette, scoped to the arbitrage engine console */
+.terminal {
+  --background: oklch(0.15 0.008 265);
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.19 0.008 265);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.19 0.008 265);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.72 0.19 150);
+  --primary-foreground: oklch(0.2 0.06 150);
+  --secondary: oklch(0.28 0.006 265);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.24 0.006 265);
+  --muted-foreground: oklch(0.7 0.012 265);
+  --accent: oklch(0.28 0.006 265);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.5 0.19 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.28 0.006 265);
+  --input: oklch(0.28 0.006 265);
+  --ring: oklch(0.72 0.19 150);
+  --signal-amber: oklch(0.8 0.16 78);
+  --radius: 0.25rem;
+
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+@theme inline {
+  --color-signal-amber: var(--signal-amber);
+}
