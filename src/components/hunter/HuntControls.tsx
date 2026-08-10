@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Crosshair, Play, X } from "lucide-react";
+import { Crosshair, Play, X, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   PRESETS,
@@ -23,6 +24,44 @@ interface Props {
 const money = (v: number) =>
   v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(2)}M` : `$${Math.round(v / 1000)}k`;
 
+const PRESET_HINTS: Record<PresetKey, string> = {
+  anchor: "Few competitors, high margin",
+  cluster: "Wide net across all sources",
+  capital: "Large contracts only",
+  nato: "European / NATO buyers",
+  repeat: "Parts bought year after year",
+};
+
+const SOURCE_HINTS: Record<SourceKey, string> = {
+  sam: "US federal tenders",
+  dibbs: "Defense Logistics Agency bids",
+  nspa: "NATO Support & Procurement Agency",
+  ncia: "NATO Communications & Information Agency",
+};
+
+function Field({
+  label,
+  hint,
+  value,
+  children,
+}: {
+  label: string;
+  hint: string;
+  value?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[15px] font-semibold text-foreground">{label}</span>
+        {value && <span className="data text-[16px] font-bold text-primary">{value}</span>}
+      </div>
+      <p className="text-[13px] leading-snug text-muted-foreground">{hint}</p>
+      {children}
+    </div>
+  );
+}
+
 export function HuntControls({ params, onChange, onRun, running }: Props) {
   const [preset, setPreset] = useState<PresetKey | null>(null);
   const [tag, setTag] = useState("");
@@ -37,18 +76,26 @@ export function HuntControls({ params, onChange, onRun, running }: Props) {
   };
 
   return (
-    <aside className="flex h-full flex-col overflow-y-auto border-r border-border bg-card/40 text-xs">
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <Crosshair className="h-4 w-4 text-primary" />
-        <h1 className="text-[12px] font-bold uppercase tracking-[0.22em]">Procurement Hunter</h1>
+    <aside className="flex h-full flex-col overflow-y-auto border-r border-border bg-card">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-5 py-4">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Crosshair className="h-6 w-6 shrink-0 text-primary" />
+          <h1 className="truncate text-[19px] font-bold tracking-tight">Procurement Hunter</h1>
+        </div>
+        <Button asChild variant="outline" size="sm" className="h-9 shrink-0 gap-1.5 text-[14px]">
+          <Link to="/hunter/manual">
+            <BookOpen className="h-4 w-4" /> Help
+          </Link>
+        </Button>
       </div>
 
-      <div className="flex-1 space-y-6 p-4">
-        <section className="space-y-2">
-          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            Strategy Presets
-          </div>
-          <div className="grid grid-cols-2 gap-1.5">
+      <div className="flex-1 space-y-8 px-5 py-6">
+        <section className="space-y-3">
+          <h2 className="text-[17px] font-bold">Strategy presets</h2>
+          <p className="text-[13px] leading-snug text-muted-foreground">
+            A preset fills in the settings below. Nothing is searched until you press Run hunt.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
             {PRESETS.map((p) => {
               const active = preset === p.key;
               return (
@@ -59,89 +106,97 @@ export function HuntControls({ params, onChange, onRun, running }: Props) {
                     setPreset(p.key);
                     onChange({ ...p.params, sources: { ...p.params.sources } });
                   }}
+                  title={PRESET_HINTS[p.key]}
                   className={cn(
-                    "rounded-sm border px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] transition-colors",
+                    "rounded-md border px-3 py-2.5 text-left text-[15px] font-semibold transition-colors",
                     p.key === "repeat" && "col-span-2",
                     active
-                      ? "border-primary bg-primary/15 text-primary"
-                      : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                      ? "border-primary bg-primary/20 text-primary"
+                      : "border-border text-foreground hover:border-primary/60 hover:bg-muted",
                   )}
                 >
-                  [ {p.label} ]
+                  {p.label === "REPEAT DEMAND" ? "Repeat demand" : p.label.charAt(0) + p.label.slice(1).toLowerCase()}
+                  <span className="mt-0.5 block text-[12px] font-normal leading-snug text-muted-foreground">
+                    {PRESET_HINTS[p.key]}
+                  </span>
                 </button>
               );
             })}
           </div>
         </section>
 
-        <section className="space-y-5 border-t border-border pt-5">
-          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-            Algorithm Parameters
-          </div>
+        <section className="space-y-6 border-t border-border pt-6">
+          <h2 className="text-[17px] font-bold">Search settings</h2>
 
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Minimum Est. Margin</span>
-              <span className="text-primary tabular-nums">{params.minMargin}%</span>
-            </div>
+          <Field
+            label="Minimum margin"
+            hint="Skip anything with less profit margin than this."
+            value={`${params.minMargin}%`}
+          >
             <Slider
               min={10}
               max={80}
               step={1}
               value={[params.minMargin]}
               onValueChange={([v]) => patch({ minMargin: v })}
+              className="py-2 [&_[data-slot=slider-thumb]]:size-6"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Minimum Contract Value</span>
-              <span className="text-primary tabular-nums">{money(params.minValue)}</span>
-            </div>
+          <Field
+            label="Minimum contract value"
+            hint="Skip contracts smaller than this total value."
+            value={money(params.minValue)}
+          >
             <Slider
               min={50000}
               max={2000000}
               step={25000}
               value={[params.minValue]}
               onValueChange={([v]) => patch({ minValue: v })}
+              className="py-2 [&_[data-slot=slider-thumb]]:size-6"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Preferred Max Incumbents</span>
-              <span className="text-primary tabular-nums">{params.maxIncumbents}</span>
-            </div>
+          <Field
+            label="Maximum competitors"
+            hint="The most existing suppliers you are willing to compete against."
+            value={String(params.maxIncumbents)}
+          >
             <Slider
               min={1}
               max={10}
               step={1}
               value={[params.maxIncumbents]}
               onValueChange={([v]) => patch({ maxIncumbents: v })}
+              className="py-2 [&_[data-slot=slider-thumb]]:size-6"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-2">
-            <div className="text-muted-foreground">FSC Codes</div>
-            <div className="flex flex-wrap gap-1.5">
+          <Field
+            label="FSC codes"
+            hint="Product categories to target. Leave empty to search all of them."
+          >
+            <div className="flex flex-wrap gap-2">
               {params.fscCodes.length === 0 && (
-                <span className="text-[10px] text-muted-foreground">ALL FSC CLASSES</span>
+                <span className="text-[14px] text-muted-foreground">All categories</span>
               )}
               {params.fscCodes.map((code) => (
                 <button
                   key={code}
                   type="button"
                   onClick={() => patch({ fscCodes: params.fscCodes.filter((c) => c !== code) })}
-                  className="inline-flex items-center gap-1 rounded-sm border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary hover:bg-primary/20"
+                  aria-label={`Remove FSC ${code}`}
+                  className="data inline-flex items-center gap-1.5 rounded-md border border-primary/50 bg-primary/15 px-2.5 py-1 text-[14px] font-semibold text-primary hover:bg-primary/25"
                 >
                   {code}
-                  <X className="h-2.5 w-2.5" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               ))}
             </div>
             <Input
               value={tag}
-              placeholder="Add FSC code + Enter"
+              placeholder="Type a code and press Enter"
               onChange={(e) => setTag(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === ",") {
@@ -150,36 +205,41 @@ export function HuntControls({ params, onChange, onRun, running }: Props) {
                 }
               }}
               onBlur={() => addTag(tag)}
-              className="h-8 rounded-sm bg-background font-mono text-xs"
+              className="h-11 text-[15px]"
             />
-          </div>
+          </Field>
         </section>
 
-        <section className="space-y-3 border-t border-border pt-5">
-          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Sources</div>
+        <section className="space-y-4 border-t border-border pt-6">
+          <h2 className="text-[17px] font-bold">Where to search</h2>
           {(Object.keys(SOURCE_LABELS) as SourceKey[]).map((key) => (
-            <label key={key} className="flex cursor-pointer items-center gap-2 text-muted-foreground">
+            <label key={key} className="flex cursor-pointer items-start gap-3">
               <Checkbox
                 checked={params.sources[key]}
-                onCheckedChange={(c) =>
-                  patch({ sources: { ...params.sources, [key]: Boolean(c) } })
-                }
-                className="h-3.5 w-3.5 rounded-[2px]"
+                onCheckedChange={(c) => patch({ sources: { ...params.sources, [key]: Boolean(c) } })}
+                className="mt-0.5 size-5"
               />
-              {SOURCE_LABELS[key]}
+              <span>
+                <span className="block text-[15px] font-semibold text-foreground">
+                  {SOURCE_LABELS[key]}
+                </span>
+                <span className="block text-[13px] leading-snug text-muted-foreground">
+                  {SOURCE_HINTS[key]}
+                </span>
+              </span>
             </label>
           ))}
         </section>
       </div>
 
-      <div className="sticky bottom-0 border-t border-border bg-card/80 p-4 backdrop-blur">
+      <div className="sticky bottom-0 border-t border-border bg-card p-5">
         <Button
           onClick={onRun}
           disabled={running}
-          className="w-full gap-2 rounded-sm text-[11px] font-bold uppercase tracking-[0.25em] shadow-[0_0_18px_-4px_var(--primary)]"
+          className="h-14 w-full gap-2 text-[17px] font-bold"
         >
-          <Play className="h-3.5 w-3.5" />
-          {running ? "Hunting…" : "Run Hunt"}
+          <Play className="h-5 w-5" />
+          {running ? "Searching…" : "Run hunt"}
         </Button>
       </div>
     </aside>
