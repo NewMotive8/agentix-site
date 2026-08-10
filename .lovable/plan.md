@@ -1,53 +1,29 @@
 # Defense Procurement Arbitrage Engine
 
-A new standalone page at `/engine` (the existing Agentix landing page at `/` stays untouched), built as a dark, high-density terminal-style console.
+New page at `/engine` built from your supplied structure, data model and mock dataset. The Agentix landing page at `/` stays untouched.
 
-## Layout
+## Files
 
-```text
-+---------------------------------------------------------------+
-| AGENTIX // ARBITRAGE ENGINE      [*] NSPA [*] SAM [*] WebFLIS  |
-+------------------+--------------------------------------------+
-| ENGINE SEARCH    |  LIVE OPPORTUNITY FEED                      |
-| PREFERENCES      |  Score | Src | NSN | Nomenclature | Value    |
-|                  |        | Margin | Incumbent | Closing       |
-| sliders,         |  -- rows, click to expand --                |
-| tags, switches   |                                             |
-| [UPDATE ALGO]    |                                             |
-+------------------+--------------------------------------------+
-```
+- `src/lib/engine-data.ts` — `Opportunity`, `PricingHistory`, `EnginePrefs` types, `defaultPrefs`, `filterOpportunities()` and your 8 mock records (thermostatic regulator, servo valve, brake disc, pressure regulating valve, fuel pressurizing valve, pack assembly, brake rotor segment, ECS condenser), plus a handful more in the same style so the feed stays dense under default filters.
+- `src/components/engine/EngineSidebar.tsx` — algorithm controls.
+- `src/components/engine/EngineFeed.tsx` — data table, price sparkline, score badges, skeleton and empty states.
+- `src/routes/engine.tsx` — layout controller, header, connection status dots.
 
-## Left panel — algorithm controls
+## Left panel — Engine Search Preferences
 
-- Minimum Est. Margin — slider, 10–80%, default 25%
-- Minimum Contract Value — slider, $50k–$2M (step $25k), default $150k
-- Max Incumbent Manufacturers — slider, 1–5, default 1
-- FSC Codes to Target — tag input; type a code and press Enter to add a chip, click x to remove. Presets seeded (4820 valves, 2530 brake components, 4130 refrigeration/thermostatic)
-- Data Sources — three switches: NSPA XML, SAM.gov API, DLA DIBBS
-- "Update Algorithm" button — full width, neon-green accent
+Min Est. Margin (10-80%, default 25), Min Contract Value ($50k-$2M, default $150k), Max Incumbent Manufacturers (1-5, default 1), FSC Codes tag field (Enter to add, click chip to remove, seeded 4820 / 2530 / 4130), three Data Source switches (NSPA XML, SAM.gov API, DLA DIBBS), and a full-width neon "UPDATE ALGORITHM" button. Edits stay local until the button is pressed.
 
-Controls only change the pending parameters; nothing filters until Update Algorithm is pressed.
+## Main view — Live Opportunity Feed
 
-## Main view — live opportunity feed
+Dense monospace table: Viability Score badge (green high, amber mid, muted low), Source, NSN, Nomenclature, Est. Value, Margin %, Incumbent, Closing Date. Sorted by score. Clicking a row expands an intelligence panel with the full description, target qty, delivery terms, an inline SVG price sparkline and the historical award list. Update Algorithm shows skeleton rows for 1 second, then re-filters.
 
-Dense monospace table with columns: Viability Score (0–100 colored badge), Source, NSN / Part Number, Nomenclature, Est. Value, Est. Margin %, Incumbent OEM, Closing Date.
+## Top right — Data Connection Status
 
-- Row click expands an inline detail row: full tender description, delivery terms, quantity, and a small historical pricing table (last 4 awards: date, unit price, awarded vendor) plus a price trend line.
-- Clicking Update Algorithm shows skeleton rows for 1 second, then renders the filtered set.
-- Header strip above the table shows result count and active filter summary; empty state when filters exclude everything.
+Three labelled dots (NSPA XML Feed, SAM.gov REST API, WebFLIS Price Database); green when the matching source is enabled, red when off. WebFLIS reflects the DIBBS switch.
 
-## Top right — connection status
+## Adaptations to this codebase
 
-Three labelled indicator dots (NSPA XML Feed, SAM.gov REST API, WebFLIS Price Database) — green pulsing when connected, red when offline. Status is mock/local and tied to the corresponding source switch where applicable.
-
-## Mock data
-
-~18 realistic records across aerospace valves (hydraulic shutoff, poppet, bleed air), brake plates/discs (rotor segments, wheel brake assemblies) and thermostatic regulators, with plausible NSNs, part numbers, OEMs (Meggitt, Parker Hannifin, Safran, Honeywell, Eaton, Collins Aerospace), values, margins and closing dates.
-
-## Technical notes
-
-- New route file `src/routes/engine.tsx` with its own `head()` metadata.
-- Shadcn Slider, Switch, Table, Badge, Skeleton, Button, Input — all already in the project.
-- Mock dataset + filter logic in `src/lib/engine-data.ts`; panel and feed split into components under `src/components/engine/`.
-- Terminal palette added as tokens in `src/styles.css` (zinc/slate surfaces, neon green + amber accents) rather than hardcoded colors; JetBrains Mono is already loaded for the data grid.
-- Client-side state only — no backend, no auth, no persistence.
+- Route uses `createFileRoute("/engine")({ head, component })` — this project uses TanStack Start file-based routing, not default-exported page components.
+- Your HSL terminal tokens are added as oklch equivalents scoped to an engine page container class in `src/styles.css`, so the existing Agentix landing styling is not overridden globally.
+- Shadcn Slider, Switch, Table, Badge, Skeleton, Button, Input are already installed — no new dependencies.
+- Client-side only: no backend, no auth, no persistence.
