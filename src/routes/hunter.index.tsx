@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useHunterLight } from "@/lib/hunter-theme";
-import { defaultParams, type HuntParams } from "@/lib/hunter-data";
+import { defaultParams, SOURCE_LABELS, type HuntParams } from "@/lib/hunter-data";
 import { PIPELINE_STAGES, runPipeline } from "@/lib/hunt/pipeline";
 import { defaultCoverage, type Coverage } from "@/lib/hunt/querymatrix";
 import {
@@ -266,6 +266,18 @@ function HunterPage() {
                 title="Executive summary"
                 subtitle={`Run ${ranAtLabel} · ${run.queriesRun} queries · ${run.rawCandidates} raw candidates · ${run.afterDedupe} after de-duplication`}
               >
+                <div className="mb-4 rounded-md border border-primary/50 bg-primary/10 p-4 text-[15px]">
+                  <div className="data font-bold text-primary">
+                    {run.isDemo ? "DEMO HUNT — SIMULATED DATA" : "LIVE HUNT"}
+                  </div>
+                  <div className="mt-1 text-foreground">
+                    Universe: {run.coverageStatement.universe} · Sources: {run.coverageStatement.sources} ·
+                    Discovery: {run.coverageStatement.discovery} · Raw target:{" "}
+                    {run.coverageStatement.rawTarget} · Working-capital limit:{" "}
+                    {run.coverageStatement.workingCapital} · Deep investigations:{" "}
+                    {run.coverageStatement.deepInvestigations}
+                  </div>
+                </div>
                 <ul className="mb-4 space-y-1 text-[15px]">
                   {run.sourceStatuses.map((s) => (
                     <li
@@ -282,6 +294,85 @@ function HunterPage() {
                   ))}
                 </ul>
               </Section>
+
+              {run.categories.length > 0 && (
+                <Section
+                  title="Coverage audit"
+                  subtitle="Every category the engine searched, with the queries executed and hits returned."
+                >
+                  <ul className="space-y-1 text-[16px]">
+                    {run.categories.map((c) => (
+                      <li key={c.id} className="data flex justify-between gap-4">
+                        <span>{c.label}</span>
+                        <span className={c.hits > 0 ? "font-bold text-primary" : "text-muted-foreground"}>
+                          {c.queries} queries — {c.hits} hits
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              {run.deepInvestigations.length > 0 && (
+                <Section
+                  title="Deep investigations"
+                  subtitle="Stage 4 — official notice documents read, then supplier research on the open web. Supplier findings are commercial research, not government-confirmed."
+                >
+                  <div className="space-y-5">
+                    {run.deepInvestigations.map((d) => {
+                      const opp = [...run.qualified, ...run.capitalConstrained].find(
+                        (o) => o.id === d.opportunityId,
+                      );
+                      return (
+                        <div key={d.opportunityId} className="rounded-md border border-border p-4">
+                          <div className="text-[17px] font-bold">{opp?.product ?? d.opportunityId}</div>
+                          {d.summary.length > 0 && (
+                            <ul className="mt-2 space-y-1 text-[16px] text-foreground">
+                              {d.summary.map((s) => (
+                                <li key={s}>• {s}</li>
+                              ))}
+                            </ul>
+                          )}
+                          {d.complianceFlags.length > 0 && (
+                            <p className="mt-2 text-[15px] text-signal-amber">
+                              Compliance flags: {d.complianceFlags.join(" · ")}
+                            </p>
+                          )}
+                          {d.suppliers.length > 0 ? (
+                            <div className="mt-3 space-y-1.5">
+                              <div className="text-[13px] font-semibold uppercase tracking-wide text-signal-blue">
+                                Potential suppliers — public web research, not government-confirmed
+                              </div>
+                              {d.suppliers.map((s) => (
+                                <div key={`${s.name}-${s.sourceUrl}`} className="text-[15px]">
+                                  <span className="font-bold">{s.name}</span>{" "}
+                                  <span className="data rounded border border-border px-1.5 py-0.5 text-[13px] font-semibold text-muted-foreground">
+                                    {s.type}
+                                  </span>{" "}
+                                  · {s.country} ·{" "}
+                                  <a
+                                    href={s.sourceUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-signal-blue underline underline-offset-2"
+                                  >
+                                    source
+                                  </a>{" "}
+                                  <span className="text-muted-foreground">
+                                    retrieved {s.retrievedAt.slice(0, 10)} — {s.evidence}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-[15px] text-muted-foreground">{d.note}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Section>
+              )}
 
               {run.top3.length > 0 && (
                 <Section title="Top 3 to investigate" subtitle="Best combination of attractiveness and executability.">
