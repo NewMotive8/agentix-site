@@ -35,6 +35,26 @@ Every record carries `source_status` (`LIVE` | `HISTORICAL` | `SIMULATED` | `EST
 
 Nothing is presented as actionable on Opportunity Score alone. Cards, the ranked feed and the report display both, and the recommendation (🟢 / 🟡 / 🔴) is driven by the pair — high attractiveness with low executability surfaces as 🟡 WATCH with the blocking constraint named.
 
+## Cash-flow gate — the hard constraint
+
+Working capital is the binding near-term constraint, so cash-flow feasibility is evaluated **before** any other opportunity-specific constraint, and it overrides margin.
+
+The pipeline estimates, per opportunity: government payment timing (e.g. Net 30 / Prompt Payment Act / progress payments), supplier payment terms, supplier deposit requirement, MOQ and inventory requirement, production lead time, **cash required before government payment**, and any financing requirement.
+
+Each opportunity is then classified:
+
+- 🟢 **CASH-FLOW COMPATIBLE** — near-zero cash needed before the government pays.
+- 🟡 **FINANCEABLE** — meaningful cash gap, coverable with financing; the required amount and duration are stated.
+- 🔴 **CASH-FLOW INCOMPATIBLE** — deposits, MOQ or lead time force substantial pre-funding.
+
+Under the Capital-Light strategy, 🔴 items are auto-rejected (listed in *Interesting but Rejected* with the cash reason) and 🟡 items are heavily penalized. Ranking follows executable economics: a lower-margin, near-zero-working-capital opportunity outranks a high-margin one with a large upfront cash requirement.
+
+The engine reports **theoretical gross margin** and **commercially executable gross margin** (after financing cost and the cash gap) as separate figures — the executable number drives the score.
+
+After the cash-flow gate, each opportunity is evaluated against its own constraint set, taken from the solicitation text and authoritative procurement rules with evidence attached, never assumed: country of origin, China restrictions, U.S.-only, NATO/allied-country requirements, Buy American, Berry Amendment, Trade Agreements Act, specialty metals, approved-source and OEM-only requirements, QPL/qualification, ITAR/EAR export control, certification, security clearance, bonding, insurance and delivery terms. No country is treated as permitted or prohibited by default.
+
+Prominent on every card and report entry: Estimated Gross Profit · Estimated Gross Margin · Cash Required Before Government Payment · Cash-Flow Compatibility · Supplier Payment Terms · Government Payment Terms · Compliance Restrictions.
+
 ## The Procurement Watch report
 
 Generated after every hunt, dated, structured as:
@@ -64,7 +84,7 @@ Each run is saved, so you get a dated history of reports you can reopen and comp
 
 **Backend (Lovable Cloud + server functions)**
 - Enable Lovable Cloud; tables `hunt_runs`, `opportunities`, `evidence`, `historical_awards`, with grants and RLS.
-- `src/lib/hunt/` modules: `queries.ts` (strategy → query matrix), `adapters/sam.ts|dibbs.ts|nspa.ts|ncia.ts` (common `SearchAdapter` interface: `search(query, page) → RawNotice[]`, each declaring its intelligence layer and emitting `source_status`), `normalize.ts`, `dedupe.ts`, `family.ts` (runs before scoring), `enrich.ts`, `suppliers.ts`, `score.ts` (both scores), `report.ts`.
+- `src/lib/hunt/` modules: `queries.ts` (strategy → query matrix), `adapters/sam.ts|dibbs.ts|nspa.ts|ncia.ts` (common `SearchAdapter` interface: `search(query, page) → RawNotice[]`, each declaring its intelligence layer and emitting `source_status`), `normalize.ts`, `dedupe.ts`, `family.ts` (runs before scoring), `enrich.ts`, `suppliers.ts`, `cashflow.ts` (payment timing, cash gap, classification), `constraints.ts` (compliance/eligibility extraction with evidence), `score.ts` (both scores), `report.ts`.
 - Every persisted record stores `source_status`, `source_url`, `retrieved_at`, `evidence_ids`; a run is flagged `is_demo` when any contributing record is `SIMULATED`, and the report renderer cannot drop that stamp.
 - SAM.gov adapter calls the live Opportunities API (`api.sam.gov/opportunities/v2/search`) with `ptype` covering active, presolicitation, sources sought, special notice and award history; paginates via `offset`/`limit` with caps and a per-run request budget. Needs a free SAM.gov API key stored as a secret — I'll prompt for it.
 - DIBBS/NSPA/NCIA adapters implement the same interface against generated corpora (several hundred realistic notices) so the pipeline, pagination and dedupe behave identically; swapping in live fetchers later is a one-file change per source.
