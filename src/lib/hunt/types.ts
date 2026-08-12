@@ -83,6 +83,8 @@ export type Scored = Opportunity & {
   familyId: string | null;
   familyLabel: string | null;
   capitalConstrained: boolean;
+  /** False for live notices whose source publishes no cost/quantity/history data. */
+  analysisAvailable: boolean;
   verdict: "INVESTIGATE" | "WATCH" | "REJECT";
   verdictReason: string;
 };

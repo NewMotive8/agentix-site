@@ -126,6 +126,7 @@ export function scoreOpportunity(opp: Opportunity, wc: WorkingCapital, isDemo: b
     familyId: null,
     familyLabel: null,
     capitalConstrained,
+    analysisAvailable: true,
     verdict,
     verdictReason,
   };

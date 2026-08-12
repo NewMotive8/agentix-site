@@ -14,7 +14,7 @@ export type LiveSearchInput = {
 export async function runLiveAdapter(key: SourceKey, input: LiveSearchInput): Promise<AdapterResult> {
   if (key !== "sam") return notConfiguredAdapter(key);
   try {
-    return await fetchSamNotices({ data: input });
+    return (await fetchSamNotices({ data: input })) as AdapterResult;
   } catch (err) {
     return {
       key,
