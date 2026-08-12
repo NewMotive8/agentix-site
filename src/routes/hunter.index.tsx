@@ -117,26 +117,37 @@ function HunterPage() {
           workingCapital={workingCapital}
           onWorkingCapitalChange={setWorkingCapital}
           onChange={setParams}
-          onRun={start}
+          onRun={() => start()}
           running={running}
+          mode={mode}
+          onModeChange={(m) => {
+            setMode(m);
+            start(m);
+          }}
+          sourceStatuses={run?.sourceStatuses ?? []}
         />
       </div>
 
       <main className="flex min-w-0 flex-1 flex-col">
+        {run && !run.integrity.liveClean && (
+          <div className="border-b border-signal-amber/60 bg-signal-amber/15 px-6 py-2.5 text-[15px] font-bold text-signal-amber">
+            DEMO — SIMULATED DATA · developer mode — {run.integrity.reason} These are not real
+            procurement opportunities.
+          </div>
+        )}
         <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
           <div>
-            <h2 className="text-[20px] font-bold">Procurement Watch</h2>
+            <h2 className="text-[20px] font-bold">
+              {run?.integrity.liveClean ? "LIVE PROCUREMENT DATA" : "DEMO — SIMULATED DATA"}
+            </h2>
             <p className="text-[15px] text-muted-foreground">
-              Working-capital limit for this hunt:{" "}
-              <span className="data font-bold text-primary">{workingCapitalLabel(run.workingCapital)}</span>
+              Procurement Watch · working-capital limit:{" "}
+              <span className="data font-bold text-primary">
+                {workingCapitalLabel(run?.workingCapital ?? workingCapital)}
+              </span>
             </p>
           </div>
           <div className="flex items-center gap-4">
-            {run.isDemo && (
-              <span className="rounded-md border border-signal-amber/60 bg-signal-amber/15 px-3 py-1.5 text-[14px] font-bold text-signal-amber">
-                DEMO — simulated data
-              </span>
-            )}
             <span className="text-[16px] font-semibold text-primary">
               {running ? "Running…" : `${visible.length} qualified · ${constrained.length} capital constrained`}
             </span>
@@ -148,10 +159,22 @@ function HunterPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {running ? (
+          {running || !run ? (
             <div className="mx-auto max-w-5xl space-y-6">
               <div className="rounded-lg border border-border bg-card p-6">
-                <h3 className="text-[18px] font-bold">Hunting…</h3>
+                <h3 className="text-[18px] font-bold">
+                  {mode === "live" ? "Hunting live sources…" : "Replaying simulated corpus…"}
+                </h3>
+                <ul className="mt-3 space-y-1 text-[15px]">
+                  {(run?.sourceStatuses ?? []).map((s) => (
+                    <li
+                      key={s.key}
+                      className={cn("data font-semibold", s.state === "LIVE" ? "text-primary" : "text-muted-foreground")}
+                    >
+                      {statusLine(s)}
+                    </li>
+                  ))}
+                </ul>
                 <ol className="mt-4 space-y-2">
                   {PIPELINE_STAGES.map((s, i) => (
                     <li
@@ -179,8 +202,18 @@ function HunterPage() {
             <div className="mx-auto max-w-5xl space-y-6">
               <Section
                 title="Executive summary"
-                subtitle={`Run ${new Date(run.ranAt).toLocaleString()} · ${run.queriesRun} queries · ${run.rawCandidates} raw candidates · ${run.afterDedupe} after de-duplication`}
+                subtitle={`Run ${ranAtLabel} · ${run.queriesRun} queries · ${run.rawCandidates} raw candidates · ${run.afterDedupe} after de-duplication`}
               >
+                <ul className="mb-4 space-y-1 text-[15px]">
+                  {run.sourceStatuses.map((s) => (
+                    <li
+                      key={s.key}
+                      className={cn("data font-semibold", s.state === "LIVE" ? "text-primary" : "text-muted-foreground")}
+                    >
+                      {statusLine(s)} {s.state === "LIVE" ? `· ${s.count} notices` : `· ${s.detail}`}
+                    </li>
+                  ))}
+                </ul>
                 <ul className="space-y-1.5 text-[16px] leading-relaxed text-foreground">
                   {run.summary.map((line) => (
                     <li key={line}>• {line}</li>
