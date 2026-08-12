@@ -73,16 +73,24 @@ export async function discoverCategory(input: CategoryDiscoveryInput): Promise<C
   const retrievedAt = new Date().toISOString();
   const seen = new Set(notices.map((n) => n.sourceUrl));
 
-  const batches = await Promise.all(
-    plan.map(async (q) => {
+  // Searches run sequentially with one retry: the provider rate-limits bursts,
+  // and a dropped query would silently shrink coverage.
+  const batches: { hits: Awaited<ReturnType<typeof firecrawlSearch>>; error: string | null }[] = [];
+  for (const q of plan) {
+    let hits: Awaited<ReturnType<typeof firecrawlSearch>> = [];
+    let error: string | null = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const hits = await firecrawlSearch(q.query, HITS_PER_QUERY);
-        return { q, hits, error: null as string | null };
+        hits = await firecrawlSearch(q.query, HITS_PER_QUERY);
+        error = null;
+        break;
       } catch (err) {
-        return { q, hits: [], error: err instanceof Error ? err.message : "search failed" };
+        error = err instanceof Error ? err.message : "search failed";
+        await new Promise((r) => setTimeout(r, 1200));
       }
-    }),
-  );
+    }
+    batches.push({ hits, error });
+  }
 
   for (const b of batches) {
     queriesRun++;
