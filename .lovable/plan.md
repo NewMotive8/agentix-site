@@ -53,3 +53,14 @@ Rules the adapter follows:
 - If a returned notice has a type value we do not recognise, it is labelled `UNCLASSIFIED NOTICE TYPE` and shown with its raw value rather than being forced into a bucket.
 - The adapter stores the raw SAM record alongside the normalised one, so notice type, `uiLink`, `noticeId`, and the retrieval timestamp are always traceable to the source payload. The investigation drawer can show the raw fields on demand.
 - Doc-check findings (endpoint URL, parameter list, valid type codes) are recorded as comments in `src/lib/hunt/sources/sam.ts` so future edits do not reintroduce invented parameters.
+
+## Mode defaults and placement (revision)
+
+Live Mode is the product. Demo Mode is a development/testing aid only.
+
+- The app defaults to **LIVE MODE** on load, including the first automatic run. No simulated results are ever shown unless the user deliberately turns Demo Mode on.
+- The DEMO/LIVE toggle moves out of the main panel into a collapsed **Advanced / Developer settings** section at the bottom of the sidebar (closed by default, with a short "for testing only" note).
+- While Demo Mode is on, a persistent amber bar across the top of the report reads `DEMO — SIMULATED DATA · developer mode` so it can never be mistaken for a real run.
+- The normal (live) experience shows a **Connected sources** panel high in the sidebar with each source's real state: `SAM.gov — LIVE ✓`, `DIBBS — NOT CONNECTED`, etc. Sources that are not connected are visibly disabled rather than silently ignored, so it is always obvious what the hunt actually covered.
+- Simulated and live records are never combined in one run, one report, or one list. The mode selects exactly one data path; there is no partial or fallback blending under any error condition.
+- If Live Mode returns nothing (no connected source, API key missing, or zero matches), the report shows the reason and stays empty. It never falls back to the demo corpus.
