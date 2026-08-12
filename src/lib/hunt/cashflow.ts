@@ -39,14 +39,14 @@ export function estimateCashFlow(opp: Opportunity): CashFlow {
 
   // Cash out before the government pays: deposit + any prepaid balance + MOQ overhang.
   const depositCash = (supplierCost * sup.depositPct) / 100;
+  // Supplier invoices at shipment; the government pays roughly 15 days after that plus its
+  // own terms. Only the portion falling due before that date has to be pre-funded.
+  const govPaysAfterShipmentDays = 15 + gov.days;
   const balanceDueBeforeGovPayment =
-    sup.payDays === 0
-      ? supplierCost - depositCash
-      : Math.max(0, supplierCost - depositCash) *
-        (sup.payDays < leadTimeDays + gov.days ? 1 : 0);
+    sup.payDays < govPaysAfterShipmentDays ? Math.max(0, supplierCost - depositCash) : 0;
 
   const cashRequired = Math.round(depositCash + balanceDueBeforeGovPayment + moqOverhang);
-  const cashGapDays = Math.max(0, leadTimeDays + gov.days - sup.payDays);
+  const cashGapDays = Math.max(0, govPaysAfterShipmentDays - sup.payDays);
   // 14% annualised working-capital cost.
   const financingCost = Math.round((cashRequired * 0.14 * cashGapDays) / 365);
 
@@ -55,7 +55,7 @@ export function estimateCashFlow(opp: Opportunity): CashFlow {
   if (moqUnits > opp.quantity)
     notes.push(`Supplier MOQ is ${moqUnits} units vs ${opp.quantity} on the solicitation.`);
   if (leadTimeDays > 120) notes.push(`Lead time of ${leadTimeDays} days stretches the cash gap.`);
-  if (sup.payDays >= 60 && sup.depositPct === 0)
+  if (sup.payDays >= govPaysAfterShipmentDays && sup.depositPct === 0)
     notes.push("Supplier terms cover the government payment cycle — little or no pre-funding.");
 
   return {
