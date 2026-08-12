@@ -81,10 +81,14 @@ export function HuntControls({
   onChange,
   onRun,
   running,
+  mode,
+  onModeChange,
+  sourceStatuses,
 }: Props) {
   const [preset, setPreset] = useState<PresetKey | null>(null);
   const [tag, setTag] = useState("");
   const [custom, setCustom] = useState("");
+  const [advanced, setAdvanced] = useState(false);
 
   const patch = (p: Partial<HuntParams>) => onChange({ ...params, ...p });
 
@@ -110,6 +114,50 @@ export function HuntControls({
       </div>
 
       <div className="flex-1 space-y-8 px-5 py-6">
+        <section className="space-y-3">
+          <h2 className="text-[17px] font-bold">Connected sources</h2>
+          <p className="text-[13px] leading-snug text-muted-foreground">
+            {mode === "live"
+              ? "Only these sources are searched. Nothing is simulated."
+              : "Developer demo mode is on — no source is contacted."}
+          </p>
+          <ul className="space-y-1.5">
+            {(Object.keys(SOURCE_LABELS) as SourceKey[]).map((key) => {
+              const st = sourceStatuses.find((s) => s.key === key);
+              const live = mode === "live" && st?.state === "LIVE";
+              const error = mode === "live" && st?.state === "ERROR";
+              return (
+                <li
+                  key={key}
+                  className={cn(
+                    "rounded-md border px-3 py-2",
+                    live
+                      ? "border-primary/50 bg-primary/10"
+                      : error
+                        ? "border-destructive/50 bg-destructive/10"
+                        : "border-border bg-muted/40",
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[15px] font-semibold text-foreground">{SOURCE_LABELS[key]}</span>
+                    <span
+                      className={cn(
+                        "data text-[13px] font-bold",
+                        live ? "text-primary" : error ? "text-destructive" : "text-muted-foreground",
+                      )}
+                    >
+                      {mode === "demo" ? "DEMO" : live ? "LIVE ✓" : error ? "ERROR" : "NOT CONNECTED"}
+                    </span>
+                  </div>
+                  {st && !live && (
+                    <p className="mt-1 text-[12px] leading-snug text-muted-foreground">{st.detail}</p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
         <section className="space-y-3">
           <h2 className="text-[17px] font-bold">Strategy presets</h2>
           <p className="text-[13px] leading-snug text-muted-foreground">
