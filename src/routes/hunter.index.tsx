@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Sun, Moon } from "lucide-react";
 import { HuntControls } from "@/components/hunter/HuntControls";
@@ -13,10 +13,12 @@ import { PIPELINE_STAGES, runPipeline } from "@/lib/hunt/pipeline";
 import {
   defaultWorkingCapital,
   workingCapitalLabel,
+  type HuntMode,
   type HuntRun,
   type Scored,
   type WorkingCapital,
 } from "@/lib/hunt/types";
+import { statusLine } from "@/lib/hunt/sources/registry";
 
 export const Route = createFileRoute("/hunter/")({
   head: () => ({
@@ -61,33 +63,42 @@ function HunterPage() {
   const { light, toggle } = useHunterLight();
   const [params, setParams] = useState<HuntParams>(defaultParams);
   const [workingCapital, setWorkingCapital] = useState<WorkingCapital>(defaultWorkingCapital);
-  const [run, setRun] = useState<HuntRun>(() =>
-    runPipeline({ params: defaultParams, workingCapital: defaultWorkingCapital, demoMode: true }),
-  );
-  const [running, setRunning] = useState(false);
+  const [mode, setMode] = useState<HuntMode>("live");
+  const [run, setRun] = useState<HuntRun | null>(null);
+  const [running, setRunning] = useState(true);
   const [stage, setStage] = useState(0);
   const [active, setActive] = useState<Scored | null>(null);
   const [saved, setSaved] = useState<string[]>([]);
   const [dismissed, setDismissed] = useState<string[]>([]);
+  const [ranAtLabel, setRanAtLabel] = useState("");
 
-  const start = () => {
+  const start = (nextMode: HuntMode = mode) => {
     setRunning(true);
     setStage(0);
-    const step = (i: number) => {
+    const finished = runPipeline({ params, workingCapital, mode: nextMode });
+    const step = async (i: number) => {
       if (i >= PIPELINE_STAGES.length) {
-        setRun(runPipeline({ params, workingCapital, demoMode: true }));
+        const result = await finished;
+        setRun(result);
+        setRanAtLabel(new Date(result.ranAt).toLocaleString());
         setDismissed([]);
         setRunning(false);
         return;
       }
       setStage(i);
-      window.setTimeout(() => step(i + 1), 260);
+      window.setTimeout(() => void step(i + 1), 260);
     };
-    step(0);
+    void step(0);
   };
 
-  const visible = run.qualified.filter((o) => !dismissed.includes(o.id));
-  const constrained = run.capitalConstrained.filter((o) => !dismissed.includes(o.id));
+  // Live mode is the default: run once on mount, in the browser only.
+  useEffect(() => {
+    start("live");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const visible = (run?.qualified ?? []).filter((o) => !dismissed.includes(o.id));
+  const constrained = (run?.capitalConstrained ?? []).filter((o) => !dismissed.includes(o.id));
 
   const cardProps = (opp: Scored) => ({
     opp,
