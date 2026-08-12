@@ -32,11 +32,46 @@ The source panel becomes method-aware, e.g. `SAM.gov — LIVE (API)`, `NSPA — 
 
 The run does not stop at a result list. Stages are shown live in the progress panel and each has visible output in the report.
 
-1. **Discover broadly** — multi-query matrix per source; wide net, no premature filtering. Reports queries run and pages fetched.
+1. **Discover broadly** — category matrix across every source; wide net, no premature filtering. Reports categories searched, queries run and pages fetched.
 2. **Collect & normalise** — extract fields with evidence, canonicalise, de-duplicate across sources and methods.
-3. **Analyse & filter** — classify notice type from source-stated fields, apply FSC/value/deadline/set-aside relevance, score with the existing engine where the data supports it, mark the rest `ANALYSIS NOT AVAILABLE`. Cash-flow gate and working-capital constraint apply as today.
+3. **Analyse & filter** — classify notice type from source-stated fields, then apply execution constraints and score. Strategy (Capital-Light, working capital, margin, value) is applied **here, after discovery** — it decides whether an opportunity is executable, never whether it is discovered. Records the engine cannot score are marked `ANALYSIS NOT AVAILABLE` rather than dropped.
 4. **Deep-investigate** — the top-ranked opportunities get a second research pass: fetch the attached solicitation documents, look for prior awards and historical pricing, identify the buying office and platform, and note incumbents where publicly stated. Everything found is written into the investigation drawer with its source link and evidence quote; gaps are listed explicitly as open questions.
-5. **U.S./NATO Procurement Watch** — the written report: executive read, top opportunities with reasoning, families/recurring demand, sources-sought and future signals, and a per-source coverage table (method, pages searched, records kept, what was not reachable).
+5. **U.S./NATO Procurement Watch** — the written report (see Report section below).
+
+## Category-based discovery engine
+
+Discovery is driven by a category/query matrix, not one broad search.
+
+**Category Coverage control** in the sidebar: `ALL CATEGORIES` (default), selected categories, specific FSC/PSC, specific NAICS, keywords, or NSN / part number.
+
+Category families shipped from the start, with no assumption that any is inherently attractive: aerospace/aircraft parts; ground vehicles and vehicle parts; ships/maritime; weapons-system components and spares; industrial machinery; pumps/valves/mechanical; electrical/electronics; communications equipment; IT/networking/COTS technology; medical/healthcare; food/subsistence; clothing/uniforms/footwear/textiles; batteries/power; tools and industrial consumables; chemicals/materials; construction/building materials; packaging; facilities supplies; transportation/logistics supplies; other COTS products; other government supply categories.
+
+**Query generation** per category: category terms x procurement terms x product terms x classification terms x strategy terms.
+
+- Procurement terms: solicitation, RFQ, RFP, IFB, sources sought, presolicitation, RFI, future opportunity, IDIQ, framework, requirements contract, spares, replacement, recurring, annual requirement.
+- Product terms are generated from the category's own vocabulary, not a single keyword.
+- Classification terms use that category's FSC/PSC and NAICS codes where they exist.
+- Every executed query is recorded with the source it was run against and how many candidates it produced.
+
+**Coverage Weight** per category (0.5 reduced / 1.0 normal / 2.0 priority, user-editable) controls how many queries and pages that category gets — search depth only. A 0.5-weight category can still surface the top-ranked opportunity.
+
+**Broad default**: ALL CATEGORIES at balanced weight. The engine keeps expanding queries and paginating until the raw-candidate target (default 50–200+, configurable) is met or the search space is exhausted. If fewer exist, the report states the real number — results are never manufactured.
+
+**Dedicated category hunt**: switching to a single category (e.g. CATEGORY: Food) runs a much deeper pass for that category — its full terminology set, FSC/PSC/NAICS, military-specific vocabulary, recurring/annual-requirement phrasing, solicitation and sources-sought phrasing, and historical-award phrasing. Same architecture for every category.
+
+## NATO coverage
+
+NATO discovery covers the NATO procurement portal (which aggregates NATO HQ, ACT, ACO, NSPA and NCIA open opportunities) plus NSPA and NCIA directly where reachable. NCIA is captured as three distinct layers, kept separate in the report: Current Opportunities, Future Opportunities, and Contract Awards.
+
+## Procurement family detection
+
+After discovery, related notices consolidate into families (e.g. AIRCRAFT FILTERS — multiple solicitations, multiple NSNs, historical awards, recurring demand). A family is a first-class intelligence object with its own card, aggregate value, buyer list and recurrence read.
+
+## Report
+
+The Procurement Watch states, in a coverage block: categories searched, queries executed, candidates discovered, candidates after deduplication, candidates passing execution constraints, deep investigations performed, top opportunities, categories producing the strongest opportunities, and categories searched that produced nothing strong. Plus the per-source coverage table (method, pages searched, records kept, what was not reachable). Search coverage is auditable end to end.
+
+The objective is not maximum results: explore broadly enough not to miss anything attractive, then narrow hard to opportunities that are profitable, recurring or sizeable, accessible, compliant and executable under the user's current constraints.
 
 ## Report integrity
 
@@ -47,8 +82,12 @@ The run does not stop at a result list. Stages are shown live in the progress pa
 ## Technical notes
 
 - New `src/lib/hunt/sources/web/`: `profiles.ts` (per-source search patterns, URL allowlist, extraction hints), `search.server.ts` (Firecrawl search + scrape), `extract.server.ts` (AI extraction returning field + evidence snippet + confidence), `adapter.ts` (implements the existing `AdapterResult` contract).
+- New `src/lib/hunt/categories.ts`: category family definitions (id, label, product vocabulary, FSC/PSC + NAICS codes, default weight) and `src/lib/hunt/querymatrix.ts` building the weighted query set and returning a `QueryPlan` with per-query provenance.
+- `HuntParams` gains `coverage: { mode: "all" | "categories" | "fsc" | "naics" | "keywords" | "nsn"; categories: string[]; weights: Record<string, number>; rawCandidateTarget: number }`.
+- `HuntRun` gains `coverage: { categoriesSearched[]; queries: { text; source; category; hits }[]; strongCategories[]; emptyCategories[] }` for the auditable coverage block.
 - `LiveNotice` gains `method: "API" | "WEB" | "DOCUMENT"`, `sourceName`, and `fieldEvidence: Record<string, { value; quote; url }>`; `Provenance` mirrors it. `SourceStatusReport` gains `method` and `coverageNote`.
-- The live branch of `runPipeline` becomes staged and streams stage progress; stages 4 and 5 run as separate server functions so deep investigation and report generation can be shown progressing.
+- The live branch of `runPipeline` becomes staged and streams stage progress (per-category progress during discovery); stages 4 and 5 run as separate server functions so deep investigation and report generation can be shown progressing.
+- Execution constraints and scoring move strictly downstream of discovery — no strategy filter is allowed to shape a query.
 - Deep investigation and report writing use the Lovable AI gateway with strict grounding: the model may use only supplied page text and must return a citation per claim; unsupported claims are dropped rather than rendered.
-- URL allowlist enforced server-side — only official domains (sam.gov, dla.mil / dibbs.bsm.dla.mil, nspa.nato.int, ncia.nato.int, nato.int) are scraped; anything else is discarded.
+- URL allowlist enforced server-side — only official domains (sam.gov, dla.mil / dibbs.bsm.dla.mil, nspa.nato.int, ncia.nato.int, nato.int and the NATO procurement portal) are scraped; anything else is discarded.
 - Per-run page budget and rate caps, surfaced in the run summary.
