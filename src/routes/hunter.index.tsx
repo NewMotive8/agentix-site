@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Sun, Moon } from "lucide-react";
 import { HuntControls } from "@/components/hunter/HuntControls";
@@ -13,10 +13,12 @@ import { PIPELINE_STAGES, runPipeline } from "@/lib/hunt/pipeline";
 import {
   defaultWorkingCapital,
   workingCapitalLabel,
+  type HuntMode,
   type HuntRun,
   type Scored,
   type WorkingCapital,
 } from "@/lib/hunt/types";
+import { statusLine } from "@/lib/hunt/sources/registry";
 
 export const Route = createFileRoute("/hunter/")({
   head: () => ({
@@ -61,33 +63,42 @@ function HunterPage() {
   const { light, toggle } = useHunterLight();
   const [params, setParams] = useState<HuntParams>(defaultParams);
   const [workingCapital, setWorkingCapital] = useState<WorkingCapital>(defaultWorkingCapital);
-  const [run, setRun] = useState<HuntRun>(() =>
-    runPipeline({ params: defaultParams, workingCapital: defaultWorkingCapital, demoMode: true }),
-  );
-  const [running, setRunning] = useState(false);
+  const [mode, setMode] = useState<HuntMode>("live");
+  const [run, setRun] = useState<HuntRun | null>(null);
+  const [running, setRunning] = useState(true);
   const [stage, setStage] = useState(0);
   const [active, setActive] = useState<Scored | null>(null);
   const [saved, setSaved] = useState<string[]>([]);
   const [dismissed, setDismissed] = useState<string[]>([]);
+  const [ranAtLabel, setRanAtLabel] = useState("");
 
-  const start = () => {
+  const start = (nextMode: HuntMode = mode) => {
     setRunning(true);
     setStage(0);
-    const step = (i: number) => {
+    const finished = runPipeline({ params, workingCapital, mode: nextMode });
+    const step = async (i: number) => {
       if (i >= PIPELINE_STAGES.length) {
-        setRun(runPipeline({ params, workingCapital, demoMode: true }));
+        const result = await finished;
+        setRun(result);
+        setRanAtLabel(new Date(result.ranAt).toLocaleString());
         setDismissed([]);
         setRunning(false);
         return;
       }
       setStage(i);
-      window.setTimeout(() => step(i + 1), 260);
+      window.setTimeout(() => void step(i + 1), 260);
     };
-    step(0);
+    void step(0);
   };
 
-  const visible = run.qualified.filter((o) => !dismissed.includes(o.id));
-  const constrained = run.capitalConstrained.filter((o) => !dismissed.includes(o.id));
+  // Live mode is the default: run once on mount, in the browser only.
+  useEffect(() => {
+    start("live");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const visible = (run?.qualified ?? []).filter((o) => !dismissed.includes(o.id));
+  const constrained = (run?.capitalConstrained ?? []).filter((o) => !dismissed.includes(o.id));
 
   const cardProps = (opp: Scored) => ({
     opp,
@@ -106,26 +117,41 @@ function HunterPage() {
           workingCapital={workingCapital}
           onWorkingCapitalChange={setWorkingCapital}
           onChange={setParams}
-          onRun={start}
+          onRun={() => start()}
           running={running}
+          mode={mode}
+          onModeChange={(m) => {
+            setMode(m);
+            start(m);
+          }}
+          sourceStatuses={run?.sourceStatuses ?? []}
         />
       </div>
 
       <main className="flex min-w-0 flex-1 flex-col">
+        {run && !run.integrity.liveClean && (
+          <div className="border-b border-signal-amber/60 bg-signal-amber/15 px-6 py-2.5 text-[15px] font-bold text-signal-amber">
+            DEMO — SIMULATED DATA · developer mode — {run.integrity.reason} These are not real
+            procurement opportunities.
+          </div>
+        )}
         <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
           <div>
-            <h2 className="text-[20px] font-bold">Procurement Watch</h2>
+            <h2 className="text-[20px] font-bold">
+              {run?.isDemo
+                ? "DEMO — SIMULATED DATA"
+                : run?.sourceStatuses.some((s) => s.state === "LIVE")
+                  ? "LIVE PROCUREMENT DATA"
+                  : "LIVE MODE — NO SOURCES CONNECTED"}
+            </h2>
             <p className="text-[15px] text-muted-foreground">
-              Working-capital limit for this hunt:{" "}
-              <span className="data font-bold text-primary">{workingCapitalLabel(run.workingCapital)}</span>
+              Procurement Watch · working-capital limit:{" "}
+              <span className="data font-bold text-primary">
+                {workingCapitalLabel(run?.workingCapital ?? workingCapital)}
+              </span>
             </p>
           </div>
           <div className="flex items-center gap-4">
-            {run.isDemo && (
-              <span className="rounded-md border border-signal-amber/60 bg-signal-amber/15 px-3 py-1.5 text-[14px] font-bold text-signal-amber">
-                DEMO — simulated data
-              </span>
-            )}
             <span className="text-[16px] font-semibold text-primary">
               {running ? "Running…" : `${visible.length} qualified · ${constrained.length} capital constrained`}
             </span>
@@ -137,10 +163,22 @@ function HunterPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          {running ? (
+          {running || !run ? (
             <div className="mx-auto max-w-5xl space-y-6">
               <div className="rounded-lg border border-border bg-card p-6">
-                <h3 className="text-[18px] font-bold">Hunting…</h3>
+                <h3 className="text-[18px] font-bold">
+                  {mode === "live" ? "Hunting live sources…" : "Replaying simulated corpus…"}
+                </h3>
+                <ul className="mt-3 space-y-1 text-[15px]">
+                  {(run?.sourceStatuses ?? []).map((s) => (
+                    <li
+                      key={s.key}
+                      className={cn("data font-semibold", s.state === "LIVE" ? "text-primary" : "text-muted-foreground")}
+                    >
+                      {statusLine(s)}
+                    </li>
+                  ))}
+                </ul>
                 <ol className="mt-4 space-y-2">
                   {PIPELINE_STAGES.map((s, i) => (
                     <li
@@ -168,8 +206,18 @@ function HunterPage() {
             <div className="mx-auto max-w-5xl space-y-6">
               <Section
                 title="Executive summary"
-                subtitle={`Run ${new Date(run.ranAt).toLocaleString()} · ${run.queriesRun} queries · ${run.rawCandidates} raw candidates · ${run.afterDedupe} after de-duplication`}
+                subtitle={`Run ${ranAtLabel} · ${run.queriesRun} queries · ${run.rawCandidates} raw candidates · ${run.afterDedupe} after de-duplication`}
               >
+                <ul className="mb-4 space-y-1 text-[15px]">
+                  {run.sourceStatuses.map((s) => (
+                    <li
+                      key={s.key}
+                      className={cn("data font-semibold", s.state === "LIVE" ? "text-primary" : "text-muted-foreground")}
+                    >
+                      {statusLine(s)} {s.state === "LIVE" ? `· ${s.count} notices` : `· ${s.detail}`}
+                    </li>
+                  ))}
+                </ul>
                 <ul className="space-y-1.5 text-[16px] leading-relaxed text-foreground">
                   {run.summary.map((line) => (
                     <li key={line}>• {line}</li>

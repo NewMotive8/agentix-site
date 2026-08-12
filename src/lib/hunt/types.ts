@@ -1,6 +1,11 @@
 import type { Opportunity, SourceKey } from "@/lib/hunter-data";
+import type { SourceStatusReport } from "./sources/types";
+
+export type { SourceStatusReport };
 
 export type SourceStatus = "LIVE" | "HISTORICAL" | "SIMULATED" | "ESTIMATE";
+
+export type HuntMode = "demo" | "live";
 
 export type CashClass = "COMPATIBLE" | "FINANCEABLE" | "INCOMPATIBLE";
 
@@ -53,6 +58,10 @@ export type Provenance = {
   sourceUrl: string;
   retrievedAt: string;
   evidenceIds: string[];
+  /** Notice type exactly as the source reported it (live records only). */
+  rawNoticeType?: string;
+  /** Untouched source payload as JSON, kept for auditing live records. */
+  rawJson?: string;
 };
 
 export type Constraint = {
@@ -74,6 +83,8 @@ export type Scored = Opportunity & {
   familyId: string | null;
   familyLabel: string | null;
   capitalConstrained: boolean;
+  /** False for live notices whose source publishes no cost/quantity/history data. */
+  analysisAvailable: boolean;
   verdict: "INVESTIGATE" | "WATCH" | "REJECT";
   verdictReason: string;
 };
@@ -95,7 +106,12 @@ export type ProcurementFamily = {
 export type HuntRun = {
   id: string;
   ranAt: string;
+  mode: HuntMode;
   isDemo: boolean;
+  /** Per-source connectivity for this run. */
+  sourceStatuses: SourceStatusReport[];
+  /** A report may only call itself LIVE PROCUREMENT DATA when liveClean is true. */
+  integrity: { liveClean: boolean; reason?: string };
   workingCapital: WorkingCapital;
   queriesRun: number;
   rawCandidates: number;

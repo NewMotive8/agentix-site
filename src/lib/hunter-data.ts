@@ -32,6 +32,10 @@ export type Opportunity = {
   estMargin: number;
   estGrossProfit: number;
   aiSummary: string;
+  /** Live records only: notice class taken from the source's own type field. */
+  liveNoticeClass?: string;
+  /** Live records only: fields the source does not publish. */
+  dataGaps?: string[];
   investigation: {
     platform: string;
     historicalQty: { year: string; qty: number; unitPrice: number }[];
