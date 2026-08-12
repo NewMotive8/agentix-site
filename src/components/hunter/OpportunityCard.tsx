@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Bookmark, Search, X } from "lucide-react";
 import type { Opportunity } from "@/lib/hunter-data";
+import type { Scored } from "@/lib/hunt/types";
+import { CASH_LABEL } from "@/lib/hunt/cashflow";
 
 export const currency = (v: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(v);
@@ -63,7 +65,7 @@ export function OpportunityCard({
   onSave,
   onDismiss,
 }: {
-  opp: Opportunity;
+  opp: Scored;
   saved: boolean;
   onInvestigate: () => void;
   onSave: () => void;
@@ -76,6 +78,20 @@ export function OpportunityCard({
         ? { cls: "border-signal-amber bg-signal-amber/15 text-signal-amber", word: "Moderate" }
         : { cls: "border-border bg-muted text-muted-foreground", word: "Weak" };
 
+  const execBand =
+    opp.executionScore > 70
+      ? { cls: "border-primary bg-primary/15 text-primary", word: "Doable" }
+      : opp.executionScore > 45
+        ? { cls: "border-signal-amber bg-signal-amber/15 text-signal-amber", word: "Hard" }
+        : { cls: "border-border bg-muted text-muted-foreground", word: "Blocked" };
+
+  const cashTone =
+    opp.cash.classification === "COMPATIBLE"
+      ? "border-primary/60 bg-primary/10 text-primary"
+      : opp.cash.classification === "FINANCEABLE"
+        ? "border-signal-amber/60 bg-signal-amber/10 text-signal-amber"
+        : "border-destructive/60 bg-destructive/10 text-destructive";
+
   return (
     <article className="rounded-lg border border-border bg-card p-6 shadow-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-5">
@@ -86,10 +102,17 @@ export function OpportunityCard({
           </div>
           <h3 className="mt-1.5 text-[21px] font-bold leading-snug">{opp.product}</h3>
         </div>
-        <div className={cn("shrink-0 rounded-lg border-2 px-4 py-2 text-center", band.cls)}>
-          <div className="data text-[30px] font-bold leading-none">{opp.score}</div>
-          <div className="text-[13px] font-semibold">out of 100</div>
-          <div className="text-[14px] font-bold">{band.word}</div>
+        <div className="flex shrink-0 gap-3">
+          <div className={cn("rounded-lg border-2 px-4 py-2 text-center", band.cls)}>
+            <div className="data text-[30px] font-bold leading-none">{opp.opportunityScore}</div>
+            <div className="text-[13px] font-semibold">Opportunity</div>
+            <div className="text-[14px] font-bold">{band.word}</div>
+          </div>
+          <div className={cn("rounded-lg border-2 px-4 py-2 text-center", execBand.cls)}>
+            <div className="data text-[30px] font-bold leading-none">{opp.executionScore}</div>
+            <div className="text-[13px] font-semibold">Execution</div>
+            <div className="text-[14px] font-bold">{execBand.word}</div>
+          </div>
         </div>
       </div>
 
@@ -107,15 +130,53 @@ export function OpportunityCard({
 
       <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-3">
         <Stat label="Contract value" value={currency(opp.estValue)} />
-        <Stat label="Estimated margin" value={`${opp.estMargin}%`} strong />
-        <Stat label="Estimated gross profit" value={currency(opp.estGrossProfit)} strong />
+        <Stat
+          label="Margin — theoretical / executable"
+          value={`${opp.theoreticalMarginPct}% → ${opp.executableMarginPct}%`}
+          strong
+        />
+        <Stat label="Executable gross profit" value={currency(opp.executableGrossProfit)} strong />
+      </div>
+
+      <div className={cn("mt-5 rounded-md border p-4", cashTone)}>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-[16px] font-bold">{CASH_LABEL[opp.cash.classification]}</span>
+          {opp.capitalConstrained && (
+            <span className="rounded-md border border-destructive/60 bg-destructive/15 px-2.5 py-1 text-[14px] font-bold text-destructive">
+              CAPITAL CONSTRAINED
+            </span>
+          )}
+          <span className="rounded-md border border-border bg-background/40 px-2.5 py-1 text-[13px] font-semibold text-muted-foreground">
+            {opp.provenance.status}
+          </span>
+        </div>
+        <div className="mt-3 grid gap-4 text-foreground sm:grid-cols-3">
+          <Stat label="Cash needed before government pays" value={currency(opp.cash.cashRequired)} />
+          <Stat label="Cash gap" value={`${opp.cash.cashGapDays} days · financing ${currency(opp.cash.financingCost)}`} />
+          <Stat label="Supplier MOQ / lead time" value={`${opp.cash.moqUnits} units · ${opp.cash.leadTimeDays} days`} />
+          <Stat label="Government payment terms" value={opp.cash.govPaymentTerms} />
+          <Stat label="Supplier payment terms" value={opp.cash.supplierPaymentTerms} />
+          <Stat
+            label="Compliance restrictions"
+            value={
+              opp.constraints.filter((c) => c.state !== "clear").map((c) => c.label).join(", ") ||
+              "None flagged"
+            }
+          />
+        </div>
       </div>
 
       <div className="mt-5 rounded-md border border-border bg-muted/40 p-4">
         <div className="text-[13px] font-semibold uppercase tracking-wide text-signal-blue">
-          Analysis
+          Analysis — {opp.verdict}
         </div>
         <p className="mt-1.5 text-[16px] leading-relaxed text-foreground">{opp.aiSummary}</p>
+        <p className="mt-2 text-[16px] leading-relaxed text-muted-foreground">{opp.verdictReason}</p>
+        {opp.familyLabel && (
+          <p className="mt-2 text-[15px] font-semibold text-signal-blue">
+            Procurement family: {opp.familyLabel}
+          </p>
+        )}
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
