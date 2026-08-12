@@ -40,3 +40,16 @@ Live records are mapped to the existing opportunity shape with no invention: sol
 - `HuntRun` gains `mode`, `sourceStatuses`, and `integrity: { liveClean: boolean; reason?: string }`; `Provenance` becomes mandatory on every scored record.
 - Progress panel renders live per-source status while the run streams; the existing staged UI stays.
 - Fixes a small hydration warning on the report timestamp by formatting dates client-side.
+
+## SAM.gov API correctness
+
+Before any adapter code is written, I verify the current SAM.gov Get Opportunities API schema against the official GSA / api.data.gov documentation — the exact endpoint version, required parameters (including the mandatory posted-date window and its maximum span), pagination fields, rate limits, and the full list of documented `ptype` codes with their meanings.
+
+Rules the adapter follows:
+
+- No guessed or human-readable `ptype` strings. Only codes the current documentation explicitly lists are ever sent, and only after the doc check confirms them. If the documentation does not support filtering a category we want, we do not filter on it.
+- Retrieval is broad: query the opportunity universe with the documented parameters (date window, NAICS, set-aside, keyword, pagination) and classify afterwards.
+- Classification (active solicitation vs sources sought vs presolicitation vs award vs special notice) comes only from the response's own notice-type fields (`type` / `baseType` and related fields as documented), never from the title text and never inferred.
+- If a returned notice has a type value we do not recognise, it is labelled `UNCLASSIFIED NOTICE TYPE` and shown with its raw value rather than being forced into a bucket.
+- The adapter stores the raw SAM record alongside the normalised one, so notice type, `uiLink`, `noticeId`, and the retrieval timestamp are always traceable to the source payload. The investigation drawer can show the raw fields on demand.
+- Doc-check findings (endpoint URL, parameter list, valid type codes) are recorded as comments in `src/lib/hunt/sources/sam.ts` so future edits do not reintroduce invented parameters.
