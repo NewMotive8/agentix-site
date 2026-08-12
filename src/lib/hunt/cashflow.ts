@@ -19,17 +19,28 @@ const GOV_TERMS: { terms: string; days: number }[] = [
   { terms: "Progress payments, 80% on milestones", days: 20 },
 ];
 
-const SUPPLIER_TERMS: { terms: string; depositPct: number; payDays: number }[] = [
-  { terms: "Net 60 (open account)", depositPct: 0, payDays: 60 },
-  { terms: "Net 30 (open account)", depositPct: 0, payDays: 30 },
-  { terms: "30% deposit, balance on shipment", depositPct: 30, payDays: 0 },
-  { terms: "50% deposit, balance before shipment", depositPct: 50, payDays: 0 },
-  { terms: "100% prepayment (OEM allocation)", depositPct: 100, payDays: 0 },
+const SUPPLIER_TERMS: { terms: string; depositPct: number; payDays: number; weight: number }[] = [
+  { terms: "Net 90 (distributor open account)", depositPct: 0, payDays: 90, weight: 20 },
+  { terms: "Net 60 (open account)", depositPct: 0, payDays: 60, weight: 25 },
+  { terms: "Net 30 (open account)", depositPct: 0, payDays: 30, weight: 20 },
+  { terms: "30% deposit, balance Net 30", depositPct: 30, payDays: 30, weight: 15 },
+  { terms: "50% deposit, balance before shipment", depositPct: 50, payDays: 0, weight: 12 },
+  { terms: "100% prepayment (OEM allocation)", depositPct: 100, payDays: 0, weight: 8 },
 ];
+
+function pickSupplierTerms(seed: number) {
+  const total = SUPPLIER_TERMS.reduce((a, t) => a + t.weight, 0);
+  let x = seed * total;
+  for (const t of SUPPLIER_TERMS) {
+    x -= t.weight;
+    if (x <= 0) return t;
+  }
+  return SUPPLIER_TERMS[0];
+}
 
 export function estimateCashFlow(opp: Opportunity): CashFlow {
   const gov = GOV_TERMS[Math.floor(seeded(opp.id, "gov") * GOV_TERMS.length)];
-  const sup = SUPPLIER_TERMS[Math.floor(seeded(opp.id, "sup") * SUPPLIER_TERMS.length)];
+  const sup = pickSupplierTerms(seeded(opp.id, "sup"));
 
   const supplierCost = opp.investigation.waterfall.supplierCost * opp.quantity;
   const leadTimeDays = 30 + Math.round(seeded(opp.id, "lead") * 150);
@@ -75,7 +86,7 @@ export function estimateCashFlow(opp: Opportunity): CashFlow {
 
 function classify(cashRequired: number, estValue: number): CashClass {
   if (cashRequired <= Math.max(5000, estValue * 0.02)) return "COMPATIBLE";
-  if (cashRequired <= Math.max(150_000, estValue * 0.25)) return "FINANCEABLE";
+  if (cashRequired <= Math.max(200_000, estValue * 0.4)) return "FINANCEABLE";
   return "INCOMPATIBLE";
 }
 
