@@ -256,6 +256,8 @@ export function OpportunityCard({
           <X className="h-5 w-5" /> Dismiss
         </Button>
       </div>
+      </>
+      )}
     </article>
   );
 }
