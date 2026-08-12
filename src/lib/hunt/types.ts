@@ -1,4 +1,7 @@
 import type { Opportunity, SourceKey } from "@/lib/hunter-data";
+import type { SourceStatusReport } from "./sources/types";
+
+export type { SourceStatusReport };
 
 export type SourceStatus = "LIVE" | "HISTORICAL" | "SIMULATED" | "ESTIMATE";
 
