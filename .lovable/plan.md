@@ -73,6 +73,44 @@ The Procurement Watch states, in a coverage block: categories searched, queries 
 
 The objective is not maximum results: explore broadly enough not to miss anything attractive, then narrow hard to opportunities that are profitable, recurring or sizeable, accessible, compliant and executable under the user's current constraints.
 
+## Supplier discovery is a separate research layer
+
+The official-domain allowlist governs procurement-source discovery and procurement facts. It does not govern supplier research.
+
+During Stage 4 Deep Investigation the engine may research the broader public web to identify potential manufacturers, OEMs, authorised distributors, alternate sources and commercial suppliers. This research is rendered in its own clearly separated panel and is never presented as government-confirmed information.
+
+- Every supplier claim carries its source URL and retrieval date.
+- Geography is not pre-weighted. U.S., European, Israeli, Turkish, Indian, Asian and other manufacturers and distributors are searched on technical and commercial suitability alone, subject to the solicitation's own country-of-origin, export and compliance requirements — which are quoted from the notice, not assumed.
+- Each supplier is typed explicitly: `OEM`, `AUTHORIZED DISTRIBUTOR`, `APPROVED ALTERNATE`, `MANUFACTURER`, `DISTRIBUTOR`, `SURPLUS / STOCKIST`, `UNVERIFIED SUPPLIER`.
+- Authorisation and approved-source status are **never inferred from the fact that a company sells the product**. `AUTHORIZED DISTRIBUTOR` requires an OEM or government statement to that effect, with the quote and URL; `APPROVED ALTERNATE` requires a government/QPL/approved-source-list statement. Absent that evidence the supplier is `UNVERIFIED SUPPLIER`, regardless of how the company describes itself.
+
+## Run coverage statement and live progress
+
+The run opens with a large, unmissable coverage statement before anything else renders:
+
+```text
+LIVE HUNT
+
+Universe: All Categories
+Sources: SAM.gov · DIBBS · NSPA · NCIA · NATO
+Discovery: Web + API where available
+Raw target: 100
+Working-capital limit: $0
+Deep investigations: 10
+```
+
+While it runs, per-category progress streams beneath it:
+
+```text
+Aerospace   — 18 queries — 42 hits
+Industrial  — 16 queries — 31 hits
+Medical     — 14 queries — 19 hits
+Food        — 12 queries — 27 hits
+...
+```
+
+The finished coverage statement stays at the top of the report as the run's header, so what was searched is always visible next to what was found.
+
 ## Report integrity
 
 - Header reads `LIVE PROCUREMENT DATA` only when every displayed record is live with URL + timestamp + method. One simulated record downgrades the whole report.
