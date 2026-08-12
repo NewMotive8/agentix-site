@@ -13,6 +13,7 @@ export const CONTROL_TABLE: ManualRow[] = [
   { term: "Minimum contract value", text: "The smallest total contract size worth your time. Higher value = only big jobs." },
   { term: "Maximum competitors", text: "How many existing suppliers you are willing to bid against. 1 means only near-monopoly items." },
   { term: "FSC codes", text: "Product category codes. Type one and press Enter to add it, click a code to remove it. Empty means every category." },
+  { term: "Working capital (Execution constraints)", text: "The most cash you can put out before the government pays you. $0 is the default: only opportunities that need no pre-funding qualify. Pick a bigger figure, type a custom one, choose Unlimited, or Ignore constraint to switch the gate off. Whatever you pick is printed at the top of every report." },
   { term: "Where to search", text: "Turn each data source on or off. Results only come from the ticked sources." },
   { term: "Run hunt", text: "Runs the search with your current settings. Also clears anything you dismissed." },
   { term: "Light / Dark button", text: "Top right. Switches between dark text on white and white text on dark. Your choice is remembered." },
@@ -27,12 +28,16 @@ export const PRESET_TABLE: ManualRow[] = [
 ];
 
 export const CARD_TABLE: ManualRow[] = [
-  { term: "Score out of 100", text: "The overall quality of the opportunity. Green 'Strong' is above 80, amber 'Moderate' is above 60, grey 'Weak' is below that. Cards are always sorted best first." },
+  { term: "Opportunity score", text: "How attractive the deal is: economics, sourcing, repeat demand, competition, compliance and timing. Green 'Strong' is above 80, amber 'Moderate' above 60." },
+  { term: "Execution score", text: "Whether you can actually win and deliver it: qualified sources, technical data, compliance barriers, lead time, capital intensity. A high opportunity score with a low execution score is a Watch, not a buy." },
+  { term: "Margin — theoretical / executable", text: "The first number ignores financing; the second is what is left after the cost of covering the cash gap. The executable number is the one that drives the score." },
+  { term: "Cash-flow badge", text: "Green Cash-flow compatible = no real pre-funding. Amber Financeable = a gap you would need to fund. Red Cash-flow incompatible = large deposits, MOQ or lead time." },
+  { term: "CAPITAL CONSTRAINED", text: "The deal is above the working-capital limit for this hunt. It is never deleted — it moves to 'Potential opportunities — financing required' so you can revisit it when financing changes." },
   { term: "Past demand for this part", text: "How regularly the government has bought this item before. High means it appears every year — the safest kind of business." },
   { term: "How easy to source", text: "How many suppliers can actually deliver it. Low means you may struggle to find anyone who can supply it at all." },
   { term: "Confidence in pricing", text: "How reliable the price estimate is. Medium or Low means the numbers on the card could move once you dig in." },
   { term: "Contract value", text: "Total value of the whole order at expected prices." },
-  { term: "Estimated margin", text: "Your profit as a percentage of the contract value." },
+  { term: "Cash needed before government pays", text: "Deposits, prepayments and MOQ overhang you must fund yourself before payment arrives." },
   { term: "Estimated gross profit", text: "The actual money left over, in dollars, across the whole order." },
   { term: "Analysis", text: "A plain-language read on why the item scored the way it did. The last sentence always names the main risk — read that first." },
   { term: "Save / Dismiss", text: "Save marks a card for yourself; Dismiss hides it from the list. Both only last for this session and reset when you run a new hunt." },
