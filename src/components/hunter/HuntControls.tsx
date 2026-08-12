@@ -371,6 +371,43 @@ export function HuntControls({
             </label>
           ))}
         </section>
+
+        <section className="space-y-3 border-t border-border pt-6">
+          <button
+            type="button"
+            onClick={() => setAdvanced((v) => !v)}
+            className="text-[14px] font-semibold text-muted-foreground underline-offset-4 hover:underline"
+          >
+            {advanced ? "Hide" : "Show"} advanced / developer settings
+          </button>
+          {advanced && (
+            <div className="space-y-3 rounded-md border border-border bg-muted/40 p-4">
+              <p className="text-[13px] leading-snug text-muted-foreground">
+                For testing only. Demo mode replays a simulated corpus and never contacts a real
+                source. Results are not real procurement opportunities.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {(["live", "demo"] as HuntMode[]).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => onModeChange(m)}
+                    className={cn(
+                      "rounded-md border px-2 py-2 text-[14px] font-bold transition-colors",
+                      mode === m
+                        ? m === "demo"
+                          ? "border-signal-amber bg-signal-amber/20 text-signal-amber"
+                          : "border-primary bg-primary/20 text-primary"
+                        : "border-border text-foreground hover:border-primary/60 hover:bg-muted",
+                    )}
+                  >
+                    {m === "live" ? "LIVE MODE" : "DEMO MODE"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
       </div>
 
       <div className="sticky bottom-0 border-t border-border bg-card p-5">
