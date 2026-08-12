@@ -6,10 +6,19 @@ import {
   type SourceKey,
 } from "@/lib/hunter-data";
 import { noticeKind, scoreOpportunity } from "./score";
-import { workingCapitalLabel, type HuntRun, type ProcurementFamily, type Scored, type WorkingCapital } from "./types";
+import { estimateCashFlow } from "./cashflow";
+import { runLiveAdapter, toStatusReport } from "./sources/registry";
+import type { AdapterResult, LiveNotice, SourceStatusReport } from "./sources/types";
+import {
+  workingCapitalLabel,
+  type HuntMode,
+  type HuntRun,
+  type ProcurementFamily,
+  type Scored,
+  type WorkingCapital,
+} from "./types";
 
-/** Strategy x terminology x FSC query matrix. Simulated adapters echo the corpus, but the
- *  matrix size is real and reported, so a broad search is visible in the progress panel. */
+/** Strategy x terminology x FSC query matrix (demo mode only). */
 const PROCUREMENT_TERMS = ["solicitation", "RFQ", "RFP", "sources sought", "presolicitation"];
 const PRODUCT_TERMS = ["spare parts", "component", "assembly", "overhaul kit", "repair parts"];
 
@@ -21,12 +30,9 @@ export function buildQueryMatrix(params: HuntParams): string[] {
   return out;
 }
 
-export type AdapterResult = { source: SourceKey; notices: Opportunity[]; pages: number };
-
-/** Simulated adapter — same interface a live fetcher will implement. */
-export function searchAdapter(source: SourceKey, pageSize = 8): AdapterResult {
-  const notices = CORPUS.filter((o) => o.source === source);
-  return { source, notices, pages: Math.max(1, Math.ceil(notices.length / pageSize)) };
+/** Simulated corpus reader — DEMO MODE ONLY. Never called from the live path. */
+export function simulatedCorpus(source: SourceKey): Opportunity[] {
+  return CORPUS.filter((o) => o.source === source);
 }
 
 function canonicalKey(o: Opportunity): string {
@@ -62,17 +68,54 @@ function buildFamilies(items: Scored[]): ProcurementFamily[] {
   return families.sort((a, b) => b.aggregateValue - a.aggregateValue);
 }
 
-export type RunInput = { params: HuntParams; workingCapital: WorkingCapital; demoMode: boolean };
+export type RunInput = {
+  params: HuntParams;
+  workingCapital: WorkingCapital;
+  mode: HuntMode;
+  lookbackDays?: number;
+};
 
-export function runPipeline({ params, workingCapital, demoMode }: RunInput): HuntRun {
+const money = (v: number) =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(v);
+
+function emptyRun(base: Partial<HuntRun>): HuntRun {
+  return {
+    id: `run-${Date.now()}`,
+    ranAt: new Date().toISOString(),
+    mode: "live",
+    isDemo: false,
+    sourceStatuses: [],
+    integrity: { liveClean: true },
+    workingCapital: { mode: "limit", limit: 0 },
+    queriesRun: 0,
+    rawCandidates: 0,
+    afterDedupe: 0,
+    qualified: [],
+    capitalConstrained: [],
+    rejected: [],
+    families: [],
+    sourcesSought: [],
+    futureSignals: [],
+    sourceKeysUsed: [],
+    top3: [],
+    summary: [],
+    ...base,
+  };
+}
+
+export async function runPipeline(input: RunInput): Promise<HuntRun> {
+  return input.mode === "demo" ? runDemo(input) : runLive(input);
+}
+
+/* ------------------------------------------------------------------ DEMO */
+
+function runDemo({ params, workingCapital }: RunInput): HuntRun {
   const queries = buildQueryMatrix(params);
   const sourceKeysUsed = (Object.keys(params.sources) as SourceKey[]).filter((k) => params.sources[k]);
 
-  // 1-2. Search + paginate
   const raw: Opportunity[] = [];
-  for (const key of sourceKeysUsed) raw.push(...searchAdapter(key).notices);
+  for (const key of sourceKeysUsed) raw.push(...simulatedCorpus(key));
 
-  // 3. Dedupe
   const seen = new Set<string>();
   const deduped = raw.filter((o) => {
     const k = canonicalKey(o);
@@ -81,9 +124,161 @@ export function runPipeline({ params, workingCapital, demoMode }: RunInput): Hun
     return true;
   });
 
-  // 4-7. Enrich + score (both scores, cash-flow gate applied inside)
-  const scored = deduped.map((o) => scoreOpportunity(o, workingCapital, demoMode));
+  const scored = deduped.map((o) => scoreOpportunity(o, workingCapital, true));
+  const { qualified, capitalConstrained, rejected } = applyConstraints(scored, params);
 
+  const families = buildFamilies([...qualified, ...capitalConstrained]);
+  const sourcesSought = qualified.filter((o) => noticeKind(o) === "SOURCES_SOUGHT");
+  const futureSignals = qualified.filter((o) => noticeKind(o) === "FUTURE");
+  const active = qualified.filter((o) => noticeKind(o) === "ACTIVE");
+
+  const summary = [
+    `Simulated corpus replayed for ${sourceKeysUsed.map((k) => SOURCE_LABELS[k]).join(", ")}. Nothing here was searched live.`,
+    `${scored.length} simulated notices screened; ${qualified.length} passed every constraint, ${capitalConstrained.length} tagged CAPITAL CONSTRAINED.`,
+    `Working-capital limit for this hunt: ${workingCapitalLabel(workingCapital)}.`,
+    families.length > 0
+      ? `${families.length} procurement families detected — largest is ${families[0].label} at ${money(families[0].aggregateValue)} aggregate value.`
+      : "No multi-notice procurement families detected in this run.",
+  ];
+
+  return emptyRun({
+    mode: "demo",
+    isDemo: true,
+    sourceStatuses: sourceKeysUsed.map((k) => ({
+      key: k,
+      label: SOURCE_LABELS[k],
+      state: "NOT_CONFIGURED" as const,
+      detail: "DEMO — simulated corpus, no live connection used",
+      count: simulatedCorpus(k).length,
+    })),
+    integrity: { liveClean: false, reason: "Demo mode — every record is simulated." },
+    workingCapital,
+    queriesRun: queries.length,
+    rawCandidates: raw.length,
+    afterDedupe: deduped.length,
+    qualified,
+    capitalConstrained,
+    rejected,
+    families,
+    sourcesSought,
+    futureSignals,
+    sourceKeysUsed,
+    top3: active.slice(0, 3),
+    summary,
+  });
+}
+
+/* ------------------------------------------------------------------ LIVE */
+
+const OPEN_CLASSES = new Set(["SOLICITATION", "COMBINED_SYNOPSIS"]);
+const SOUGHT_CLASSES = new Set(["SOURCES_SOUGHT", "PRESOLICITATION"]);
+const FUTURE_CLASSES = new Set(["SPECIAL_NOTICE", "INTENT_TO_BUNDLE"]);
+
+/** Wraps a live notice as a Scored record without inventing any economics. */
+function liveScored(n: LiveNotice, wc: WorkingCapital): Scored {
+  const o = n.opportunity;
+  return {
+    ...o,
+    provenance: {
+      status: "LIVE",
+      sourceUrl: n.sourceUrl,
+      retrievedAt: n.retrievedAt,
+      evidenceIds: [`${o.source}:${o.solicitation}`],
+      rawNoticeType: n.rawNoticeType,
+      raw: n.raw,
+    },
+    cash: estimateCashFlow(o),
+    opportunityScore: 0,
+    executionScore: 0,
+    theoreticalMarginPct: 0,
+    executableMarginPct: 0,
+    executableGrossProfit: 0,
+    constraints: [],
+    repeatDemandScore: 0,
+    familyId: null,
+    familyLabel: null,
+    capitalConstrained: false,
+    analysisAvailable: false,
+    verdict: "WATCH",
+    verdictReason:
+      "Live notice. Economics, quantities and supplier data are not published by this source, so no score is calculated — open the original notice to evaluate.",
+    _wc: undefined as never,
+  } as Scored;
+}
+
+async function runLive({ params, workingCapital, lookbackDays = 90 }: RunInput): Promise<HuntRun> {
+  const sourceKeysUsed = (Object.keys(params.sources) as SourceKey[]).filter((k) => params.sources[k]);
+
+  const results: AdapterResult[] = await Promise.all(
+    sourceKeysUsed.map((k) =>
+      runLiveAdapter(k, { keywords: [], fscCodes: params.fscCodes, lookbackDays }),
+    ),
+  );
+
+  const statuses: SourceStatusReport[] = results.map(toStatusReport);
+  const notices = results.flatMap((r) => r.notices);
+  const queriesRun = results.reduce((a, r) => a + r.queriesRun, 0);
+
+  const seen = new Set<string>();
+  const deduped = notices.filter((n) => {
+    const k = canonicalKey(n.opportunity);
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+
+  const scored = deduped.map((n) => liveScored(n, workingCapital));
+
+  const qualified = scored.filter((s) => OPEN_CLASSES.has(String(s.liveNoticeClass)) || s.liveNoticeClass === undefined);
+  const sourcesSought = scored.filter((s) => SOUGHT_CLASSES.has(String(s.liveNoticeClass)));
+  const futureSignals = scored.filter((s) => FUTURE_CLASSES.has(String(s.liveNoticeClass)));
+  const rejected = scored
+    .filter((s) => !qualified.includes(s) && !sourcesSought.includes(s) && !futureSignals.includes(s))
+    .map((opp) => ({
+      opp,
+      reason: `Notice type reported by source: ${opp.provenance.rawNoticeType ?? "unknown"}`,
+    }))
+    .slice(0, 20);
+
+  const live = statuses.filter((s) => s.state === "LIVE");
+  const offline = statuses.filter((s) => s.state !== "LIVE");
+
+  const summary = [
+    live.length > 0
+      ? `Live retrieval from ${live.map((s) => s.label).join(", ")} — ${notices.length} notices returned across ${queriesRun} API calls.`
+      : "No source returned live data for this hunt.",
+    offline.length > 0
+      ? `Not searched: ${offline.map((s) => `${s.label} (${s.detail})`).join(" · ")}`
+      : "All selected sources are connected.",
+    `${qualified.length} open solicitations · ${sourcesSought.length} sources sought / presolicitations · ${futureSignals.length} special notices.`,
+    "Notice types come from each record's own type field. Quantities, NSNs, prices and supplier data are not published by these APIs and are shown as NOT AVAILABLE rather than estimated.",
+    `Working-capital limit for this hunt: ${workingCapitalLabel(workingCapital)}.`,
+  ];
+
+  return emptyRun({
+    mode: "live",
+    isDemo: false,
+    sourceStatuses: statuses,
+    integrity: scored.every((s) => s.provenance.status === "LIVE")
+      ? { liveClean: true }
+      : { liveClean: false, reason: "A non-live record was present in the result set." },
+    workingCapital,
+    queriesRun,
+    rawCandidates: notices.length,
+    afterDedupe: deduped.length,
+    qualified,
+    capitalConstrained: [],
+    rejected,
+    families: [],
+    sourcesSought,
+    futureSignals,
+    sourceKeysUsed,
+    top3: [],
+    summary,
+  });
+}
+
+function applyConstraints(scored: Scored[], params: HuntParams) {
   const qualified: Scored[] = [];
   const capitalConstrained: Scored[] = [];
   const rejected: { opp: Scored; reason: string }[] = [];
@@ -117,52 +312,19 @@ export function runPipeline({ params, workingCapital, demoMode }: RunInput): Hun
   qualified.sort(byScore);
   capitalConstrained.sort(byScore);
 
-  const families = buildFamilies([...qualified, ...capitalConstrained]);
-  const sourcesSought = qualified.filter((o) => noticeKind(o) === "SOURCES_SOUGHT");
-  const futureSignals = qualified.filter((o) => noticeKind(o) === "FUTURE");
-  const active = qualified.filter((o) => noticeKind(o) === "ACTIVE");
-  const top3 = active.slice(0, 3);
-
-  const summary = [
-    `${scored.length} notices screened from ${sourceKeysUsed.map((k) => SOURCE_LABELS[k]).join(", ")} across ${queries.length} queries.`,
-    `${qualified.length} opportunities passed every constraint; ${capitalConstrained.length} were set aside as CAPITAL CONSTRAINED.`,
-    `Working-capital limit for this hunt: ${workingCapitalLabel(workingCapital)}.`,
-    families.length > 0
-      ? `${families.length} procurement families detected — largest is ${families[0].label} at ${money(families[0].aggregateValue)} aggregate value.`
-      : "No multi-notice procurement families detected in this run.",
-    `${qualified.filter((o) => o.repeatDemandScore >= 60).length} opportunities show strong repeat demand across three or more fiscal years.`,
-  ];
-
   return {
-    id: `run-${Date.now()}`,
-    ranAt: new Date().toISOString(),
-    isDemo: demoMode,
-    workingCapital,
-    queriesRun: queries.length,
-    rawCandidates: raw.length,
-    afterDedupe: deduped.length,
     qualified,
     capitalConstrained,
     rejected: rejected.sort((a, b) => b.opp.opportunityScore - a.opp.opportunityScore).slice(0, 12),
-    families,
-    sourcesSought,
-    futureSignals,
-    sourceKeysUsed,
-    top3,
-    summary,
   };
 }
 
 export const PIPELINE_STAGES = [
-  { key: "search", label: "Searching sources", detail: "Running the query matrix with pagination" },
+  { key: "search", label: "Searching sources", detail: "Querying each connected source" },
   { key: "dedupe", label: "Normalising & de-duplicating", detail: "Canonical key per notice" },
+  { key: "classify", label: "Classifying notices", detail: "From each record's own type field" },
   { key: "enrich", label: "Enriching historical demand", detail: "Prior awards, quantities, unit prices" },
-  { key: "family", label: "Detecting procurement families", detail: "Grouping by platform and program" },
   { key: "cash", label: "Applying the cash-flow gate", detail: "Payment timing, deposits, MOQ, lead time" },
   { key: "score", label: "Scoring", detail: "Opportunity Score and Commercial Execution Score" },
   { key: "report", label: "Generating Procurement Watch", detail: "Ranking and writing the report" },
 ];
-
-function money(v: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(v);
-}
