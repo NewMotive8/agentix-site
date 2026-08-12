@@ -138,7 +138,11 @@ function HunterPage() {
         <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
           <div>
             <h2 className="text-[20px] font-bold">
-              {run?.integrity.liveClean ? "LIVE PROCUREMENT DATA" : "DEMO — SIMULATED DATA"}
+              {run?.isDemo
+                ? "DEMO — SIMULATED DATA"
+                : run?.sourceStatuses.some((s) => s.state === "LIVE")
+                  ? "LIVE PROCUREMENT DATA"
+                  : "LIVE MODE — NO SOURCES CONNECTED"}
             </h2>
             <p className="text-[15px] text-muted-foreground">
               Procurement Watch · working-capital limit:{" "}
