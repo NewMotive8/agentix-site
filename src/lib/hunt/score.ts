@@ -1,6 +1,6 @@
 import type { Opportunity } from "@/lib/hunter-data";
 import type { CashFlow, Constraint, Scored, WorkingCapital } from "./types";
-import { exceedsWorkingCapital, seeded } from "./cashflow";
+import { estimateCashFlow, exceedsWorkingCapital, seeded } from "./cashflow";
 
 const ACCESS_POINTS: Record<string, number> = {
   "VERY HIGH": 20,
@@ -69,9 +69,92 @@ function clamp(n: number) {
 }
 
 export function scoreOpportunity(opp: Opportunity, wc: WorkingCapital, isDemo: boolean): Scored {
-  const cash = (
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require as unknown
-  ) as never; // placeholder removed below
-  return cash as never;
+  const cash = estimateCashFlow(opp);
+  const repeat = repeatDemandScore(opp);
+  const w = opp.investigation.waterfall;
+  const unitCost = w.supplierCost + w.freight + w.inspCert;
+  const theoreticalMarginPct = Math.round(((w.govPrice - unitCost) / w.govPrice) * 100);
+  const grossProfit = (w.govPrice - unitCost) * opp.quantity;
+  const executableGrossProfit = Math.round(grossProfit - cash.financingCost);
+  const executableMarginPct = Math.max(
+    0,
+    Math.round((executableGrossProfit / (w.govPrice * opp.quantity)) * 100),
+  );
+  const constraints = buildConstraints(opp);
+  const oScore = opportunityScore(opp, repeat, executableMarginPct);
+  const eScore = executionScore(opp, cash);
+  const capitalConstrained = exceedsWorkingCapital(cash, wc);
+
+  let verdict: Scored["verdict"] = "WATCH";
+  let verdictReason = "";
+  if (capitalConstrained) {
+    verdict = "WATCH";
+    verdictReason = `Needs ${money(cash.cashRequired)} of cash before the government pays — above the working-capital limit for this hunt.`;
+  } else if (oScore >= 70 && eScore >= 65) {
+    verdict = "INVESTIGATE";
+    verdictReason = "Attractive economics and a realistic path to win and deliver.";
+  } else if (oScore < 45 || eScore < 40) {
+    verdict = "REJECT";
+    verdictReason =
+      eScore < 40
+        ? "Execution barriers (sources, qualification or compliance) make this impractical right now."
+        : "Economics are too weak to justify the effort.";
+  } else {
+    verdictReason =
+      oScore >= 70
+        ? "Attractive, but execution capacity is the limiting factor."
+        : "Worth monitoring; neither economics nor execution are compelling yet.";
+  }
+
+  return {
+    ...opp,
+    score: oScore,
+    provenance: {
+      status: isDemo ? "SIMULATED" : "LIVE",
+      sourceUrl: sourceUrlFor(opp),
+      retrievedAt: new Date().toISOString(),
+      evidenceIds: [`${opp.source}:${opp.solicitation}`],
+    },
+    cash,
+    opportunityScore: oScore,
+    executionScore: eScore,
+    theoreticalMarginPct,
+    executableMarginPct,
+    executableGrossProfit,
+    constraints,
+    repeatDemandScore: repeat,
+    familyId: null,
+    familyLabel: null,
+    capitalConstrained,
+    verdict,
+    verdictReason,
+  };
+}
+
+export function noticeKind(opp: Opportunity): "ACTIVE" | "SOURCES_SOUGHT" | "FUTURE" {
+  const r = seeded(opp.id, "kind");
+  if (r > 0.82) return "SOURCES_SOUGHT";
+  if (r > 0.7) return "FUTURE";
+  return "ACTIVE";
+}
+
+function sourceUrlFor(opp: Opportunity): string {
+  switch (opp.source) {
+    case "sam":
+      return `https://sam.gov/search/?keywords=${encodeURIComponent(opp.solicitation)}`;
+    case "dibbs":
+      return `https://www.dibbs.bsm.dla.mil/RFQ/RFQNsn.aspx?value=${encodeURIComponent(opp.nsn)}`;
+    case "nspa":
+      return "https://eportal.nspa.nato.int/";
+    default:
+      return "https://www.ncia.nato.int/business/opportunities.html";
+  }
+}
+
+function money(v: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(v);
 }
