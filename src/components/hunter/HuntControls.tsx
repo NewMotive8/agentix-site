@@ -7,6 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Crosshair, Play, X, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
+  WORKING_CAPITAL_PRESETS,
+  workingCapitalLabel,
+  type WorkingCapital,
+} from "@/lib/hunt/types";
+import {
   PRESETS,
   SOURCE_LABELS,
   type HuntParams,
@@ -16,6 +21,8 @@ import {
 
 interface Props {
   params: HuntParams;
+  workingCapital: WorkingCapital;
+  onWorkingCapitalChange: (wc: WorkingCapital) => void;
   onChange: (p: HuntParams) => void;
   onRun: () => void;
   running: boolean;
@@ -62,9 +69,17 @@ function Field({
   );
 }
 
-export function HuntControls({ params, onChange, onRun, running }: Props) {
+export function HuntControls({
+  params,
+  workingCapital,
+  onWorkingCapitalChange,
+  onChange,
+  onRun,
+  running,
+}: Props) {
   const [preset, setPreset] = useState<PresetKey | null>(null);
   const [tag, setTag] = useState("");
+  const [custom, setCustom] = useState("");
 
   const patch = (p: Partial<HuntParams>) => onChange({ ...params, ...p });
 
@@ -206,6 +221,79 @@ export function HuntControls({ params, onChange, onRun, running }: Props) {
               }}
               onBlur={() => addTag(tag)}
               className="h-11 text-[15px]"
+            />
+          </Field>
+        </section>
+
+        <section className="space-y-4 border-t border-border pt-6">
+          <h2 className="text-[17px] font-bold">Execution constraints</h2>
+          <Field
+            label="Working capital"
+            hint="Maximum cash required before the government pays. Opportunities above this stay visible, tagged CAPITAL CONSTRAINED."
+            value={workingCapitalLabel(workingCapital)}
+          >
+            <div className="grid grid-cols-3 gap-2">
+              {WORKING_CAPITAL_PRESETS.map((o) => {
+                const on = workingCapital.mode === "limit" && workingCapital.limit === o.limit;
+                return (
+                  <button
+                    key={o.label}
+                    type="button"
+                    onClick={() => onWorkingCapitalChange({ mode: "limit", limit: o.limit })}
+                    className={cn(
+                      "data rounded-md border px-2 py-2 text-[15px] font-bold transition-colors",
+                      on
+                        ? "border-primary bg-primary/20 text-primary"
+                        : "border-border text-foreground hover:border-primary/60 hover:bg-muted",
+                    )}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => onWorkingCapitalChange({ mode: "unlimited", limit: 0 })}
+                className={cn(
+                  "rounded-md border px-2 py-2 text-[14px] font-semibold transition-colors",
+                  workingCapital.mode === "unlimited"
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "border-border text-foreground hover:border-primary/60 hover:bg-muted",
+                )}
+              >
+                Unlimited
+              </button>
+              <button
+                type="button"
+                onClick={() => onWorkingCapitalChange({ mode: "ignore", limit: 0 })}
+                className={cn(
+                  "rounded-md border px-2 py-2 text-[14px] font-semibold transition-colors",
+                  workingCapital.mode === "ignore"
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "border-border text-foreground hover:border-primary/60 hover:bg-muted",
+                )}
+              >
+                Ignore constraint
+              </button>
+            </div>
+            <Input
+              value={custom}
+              placeholder="Custom limit in dollars, e.g. 75000"
+              inputMode="numeric"
+              onChange={(e) => setCustom(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                const n = Number(custom.replace(/[^0-9]/g, ""));
+                if (!Number.isNaN(n)) onWorkingCapitalChange({ mode: "limit", limit: n });
+              }}
+              onBlur={() => {
+                const n = Number(custom.replace(/[^0-9]/g, ""));
+                if (custom && !Number.isNaN(n)) onWorkingCapitalChange({ mode: "limit", limit: n });
+              }}
+              className="mt-2 h-11 text-[15px]"
             />
           </Field>
         </section>
