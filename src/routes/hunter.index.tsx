@@ -10,9 +10,11 @@ import { cn } from "@/lib/utils";
 import { useHunterLight } from "@/lib/hunter-theme";
 import { defaultParams, type HuntParams } from "@/lib/hunter-data";
 import { PIPELINE_STAGES, runPipeline } from "@/lib/hunt/pipeline";
+import { defaultCoverage, type Coverage } from "@/lib/hunt/querymatrix";
 import {
   defaultWorkingCapital,
   workingCapitalLabel,
+  type CategoryProgress,
   type HuntMode,
   type HuntRun,
   type Scored,
@@ -63,6 +65,8 @@ function HunterPage() {
   const { light, toggle } = useHunterLight();
   const [params, setParams] = useState<HuntParams>(defaultParams);
   const [workingCapital, setWorkingCapital] = useState<WorkingCapital>(defaultWorkingCapital);
+  const [coverage, setCoverage] = useState<Coverage>(defaultCoverage);
+  const [progress, setProgress] = useState<CategoryProgress[]>([]);
   const [mode, setMode] = useState<HuntMode>("live");
   const [run, setRun] = useState<HuntRun | null>(null);
   const [running, setRunning] = useState(true);
@@ -75,20 +79,23 @@ function HunterPage() {
   const start = (nextMode: HuntMode = mode) => {
     setRunning(true);
     setStage(0);
-    const finished = runPipeline({ params, workingCapital, mode: nextMode });
-    const step = async (i: number) => {
-      if (i >= PIPELINE_STAGES.length) {
-        const result = await finished;
-        setRun(result);
-        setRanAtLabel(new Date(result.ranAt).toLocaleString());
-        setDismissed([]);
-        setRunning(false);
-        return;
-      }
-      setStage(i);
-      window.setTimeout(() => void step(i + 1), 260);
-    };
-    void step(0);
+    setProgress([]);
+    void runPipeline({
+      params,
+      workingCapital,
+      coverage,
+      mode: nextMode,
+      onProgress: (p) => {
+        setProgress(p.categories);
+        setStage(p.stage);
+      },
+    }).then((result) => {
+      setRun(result);
+      setRanAtLabel(new Date(result.ranAt).toLocaleString());
+      setDismissed([]);
+      setStage(PIPELINE_STAGES.length - 1);
+      setRunning(false);
+    });
   };
 
   // Live mode is the default: run once on mount, in the browser only.
@@ -117,6 +124,8 @@ function HunterPage() {
           workingCapital={workingCapital}
           onWorkingCapitalChange={setWorkingCapital}
           onChange={setParams}
+          coverage={coverage}
+          onCoverageChange={setCoverage}
           onRun={() => start()}
           running={running}
           mode={mode}
@@ -165,6 +174,55 @@ function HunterPage() {
         <div className="flex-1 overflow-y-auto p-6">
           {running || !run ? (
             <div className="mx-auto max-w-5xl space-y-6">
+              <div className="rounded-lg border-2 border-primary bg-primary/10 p-6">
+                <h3 className="data text-[22px] font-bold tracking-wide text-primary">
+                  {mode === "live" ? "LIVE HUNT" : "DEMO HUNT — SIMULATED"}
+                </h3>
+                <dl className="mt-3 grid gap-x-8 gap-y-1.5 text-[16px] sm:grid-cols-2">
+                  {[
+                    ["Universe", coverage.mode === "all" ? "All categories" : coverage.mode === "categories" ? `${coverage.categories.length || "all"} selected categories` : `${coverage.mode.toUpperCase()}: ${coverage.terms || "(none entered)"}`],
+                    ["Sources", (Object.keys(params.sources) as (keyof typeof params.sources)[]).filter((k) => params.sources[k]).map((k) => SOURCE_LABELS[k]).join(" · ")],
+                    ["Discovery", mode === "live" ? "Web (official procurement domains) + API where available" : "Simulated corpus"],
+                    ["Raw target", String(coverage.rawTarget)],
+                    ["Working-capital limit", workingCapitalLabel(workingCapital)],
+                    ["Deep investigations", String(coverage.deepInvestigations)],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex gap-2">
+                      <dt className="font-semibold text-muted-foreground">{k}:</dt>
+                      <dd className="data font-bold text-foreground">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+
+              {progress.length > 0 && (
+                <div className="rounded-lg border border-border bg-card p-6">
+                  <h3 className="text-[18px] font-bold">Category coverage</h3>
+                  <ul className="mt-3 space-y-1">
+                    {progress.map((c) => (
+                      <li
+                        key={c.id}
+                        className={cn(
+                          "data flex items-baseline justify-between gap-4 rounded-md px-3 py-1.5 text-[16px]",
+                          c.state === "running"
+                            ? "bg-primary/20 font-bold text-primary"
+                            : c.state === "done"
+                              ? "text-foreground"
+                              : "text-muted-foreground",
+                        )}
+                      >
+                        <span>{c.label}</span>
+                        <span>
+                          {c.state === "pending"
+                            ? "queued"
+                            : `${c.queries} queries — ${c.hits} hits${c.state === "running" ? " …" : ""}`}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <div className="rounded-lg border border-border bg-card p-6">
                 <h3 className="text-[18px] font-bold">
                   {mode === "live" ? "Hunting live sources…" : "Replaying simulated corpus…"}

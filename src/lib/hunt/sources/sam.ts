@@ -169,6 +169,7 @@ export function toLiveNotice(rec: SamRecord, retrievedAt: string): LiveNotice {
     retrievedAt,
     rawNoticeType: raw,
     rawJson: JSON.stringify(rec),
+    method: "API",
   };
 }
 

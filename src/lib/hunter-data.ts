@@ -1,6 +1,6 @@
 export type Level = "HIGH" | "MED" | "LOW";
 export type Accessibility = "VERY HIGH" | "HIGH" | "MED" | "LOW" | "VERY LOW";
-export type SourceKey = "sam" | "dibbs" | "nspa" | "ncia";
+export type SourceKey = "sam" | "dibbs" | "nspa" | "ncia" | "nato";
 export type Recommendation = "PURSUE" | "INVESTIGATE FURTHER" | "LOW PRIORITY" | "REJECT";
 
 export type SupplySource = {
@@ -60,6 +60,7 @@ export const SOURCE_LABELS: Record<SourceKey, string> = {
   dibbs: "DLA DIBBS",
   nspa: "NSPA",
   ncia: "NCIA",
+  nato: "NATO portals (HQ / ACT / ACO)",
 };
 
 export const defaultParams: HuntParams = {
@@ -67,7 +68,7 @@ export const defaultParams: HuntParams = {
   minValue: 100000,
   maxIncumbents: 3,
   fscCodes: [],
-  sources: { sam: true, dibbs: true, nspa: true, ncia: true },
+  sources: { sam: true, dibbs: true, nspa: true, ncia: true, nato: true },
 };
 
 export type PresetKey = "anchor" | "cluster" | "capital" | "nato" | "repeat";
@@ -81,7 +82,7 @@ export const PRESETS: { key: PresetKey; label: string; params: HuntParams }[] = 
       minValue: 250000,
       maxIncumbents: 1,
       fscCodes: ["1650", "2530"],
-      sources: { sam: true, dibbs: true, nspa: false, ncia: false },
+      sources: { sam: true, dibbs: true, nspa: false, ncia: false, nato: false },
     },
   },
   {
@@ -92,7 +93,7 @@ export const PRESETS: { key: PresetKey; label: string; params: HuntParams }[] = 
       minValue: 100000,
       maxIncumbents: 5,
       fscCodes: ["1650", "2530", "4820", "1560"],
-      sources: { sam: true, dibbs: true, nspa: true, ncia: true },
+      sources: { sam: true, dibbs: true, nspa: true, ncia: true, nato: true },
     },
   },
   {
@@ -103,7 +104,7 @@ export const PRESETS: { key: PresetKey; label: string; params: HuntParams }[] = 
       minValue: 750000,
       maxIncumbents: 4,
       fscCodes: [],
-      sources: { sam: true, dibbs: false, nspa: true, ncia: true },
+      sources: { sam: true, dibbs: false, nspa: true, ncia: true, nato: true },
     },
   },
   {
@@ -114,7 +115,7 @@ export const PRESETS: { key: PresetKey; label: string; params: HuntParams }[] = 
       minValue: 150000,
       maxIncumbents: 6,
       fscCodes: ["1650", "5895"],
-      sources: { sam: false, dibbs: false, nspa: true, ncia: true },
+      sources: { sam: false, dibbs: false, nspa: true, ncia: true, nato: true },
     },
   },
   {
@@ -125,7 +126,7 @@ export const PRESETS: { key: PresetKey; label: string; params: HuntParams }[] = 
       minValue: 80000,
       maxIncumbents: 8,
       fscCodes: ["2530", "4820", "1650"],
-      sources: { sam: true, dibbs: true, nspa: true, ncia: false },
+      sources: { sam: true, dibbs: true, nspa: true, ncia: false, nato: false },
     },
   },
 ];
