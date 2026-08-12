@@ -101,7 +101,34 @@ export function OpportunityCard({
             <span className="font-semibold text-signal-blue">{opp.sourceLabel}</span>
           </div>
           <h3 className="mt-1.5 text-[21px] font-bold leading-snug">{opp.product}</h3>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
+            <span
+              className={cn(
+                "rounded-md border px-2 py-0.5 font-bold",
+                opp.provenance.status === "LIVE"
+                  ? "border-primary/60 bg-primary/10 text-primary"
+                  : "border-signal-amber/60 bg-signal-amber/15 text-signal-amber",
+              )}
+            >
+              {opp.provenance.status === "LIVE" ? "LIVE" : "DEMO — SIMULATED"}
+            </span>
+            {opp.provenance.rawNoticeType && (
+              <span className="rounded-md border border-border bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
+                Notice type: {opp.provenance.rawNoticeType}
+              </span>
+            )}
+            <a
+              href={opp.provenance.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-signal-blue underline underline-offset-2"
+            >
+              Open original notice
+            </a>
+            <span className="text-muted-foreground">Retrieved {opp.provenance.retrievedAt.slice(0, 19).replace("T", " ")} UTC</span>
+          </div>
         </div>
+        {opp.analysisAvailable && (
         <div className="flex shrink-0 gap-3">
           <div className={cn("rounded-lg border-2 px-4 py-2 text-center", band.cls)}>
             <div className="data text-[30px] font-bold leading-none">{opp.opportunityScore}</div>
@@ -114,7 +141,42 @@ export function OpportunityCard({
             <div className="text-[14px] font-bold">{execBand.word}</div>
           </div>
         </div>
+        )}
       </div>
+
+      {!opp.analysisAvailable && (
+        <div className="mt-4 rounded-md border border-border bg-muted/40 p-4">
+          <div className="text-[15px] font-bold text-foreground">
+            Scores and economics: NOT AVAILABLE
+          </div>
+          <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
+            This source publishes the notice only. Quantities, NSNs, unit prices, incumbents and
+            supplier data are not part of its response, so nothing is estimated here.
+          </p>
+          {opp.deadline && (
+            <p className="mt-2 text-[15px] text-foreground">
+              Response deadline: <span className="data font-semibold">{opp.deadline}</span>
+              {opp.fsc && <> · Classification code <span className="data font-semibold">{opp.fsc}</span></>}
+            </p>
+          )}
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button asChild className="h-12 gap-2 px-6 text-[16px] font-bold">
+              <a href={opp.provenance.sourceUrl} target="_blank" rel="noreferrer">
+                <Search className="h-5 w-5" /> Open on {opp.sourceLabel}
+              </a>
+            </Button>
+            <Button onClick={onSave} variant="outline" className={cn("h-12 gap-2 px-5 text-[16px]", saved && "border-primary text-primary")}>
+              <Bookmark className="h-5 w-5" /> {saved ? "Saved" : "Save"}
+            </Button>
+            <Button onClick={onDismiss} variant="ghost" className="h-12 gap-2 px-5 text-[16px]">
+              <X className="h-5 w-5" /> Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {opp.analysisAvailable && (
+      <>
 
       <div className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-3">
         <Stat label="NSN / Part number" value={`${opp.nsn}  ${opp.partNumber}`} />
