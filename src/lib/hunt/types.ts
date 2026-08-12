@@ -61,7 +61,7 @@ export type Provenance = {
   /** Notice type exactly as the source reported it (live records only). */
   rawNoticeType?: string;
   /** Untouched source payload, kept for auditing live records. */
-  raw?: unknown;
+  raw?: Record<string, unknown>;
 };
 
 export type Constraint = {

@@ -21,7 +21,7 @@ export type LiveNotice = {
   /** Notice type exactly as reported by the source. Never inferred from the title. */
   rawNoticeType: string;
   /** Untouched source record, kept so provenance can always be audited. */
-  raw: unknown;
+  raw: Record<string, unknown>;
 };
 
 export type AdapterResult = {
