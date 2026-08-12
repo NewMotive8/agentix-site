@@ -69,6 +69,10 @@ After discovery, related notices consolidate into families (e.g. AIRCRAFT FILTER
 
 ## Report
 
+The Procurement Watch states, in a coverage block: categories searched, queries executed, candidates discovered, candidates after deduplication, candidates passing execution constraints, deep investigations performed, top opportunities, categories producing the strongest opportunities, and categories searched that produced nothing strong. Plus the per-source coverage table (method, pages searched, records kept, what was not reachable). Search coverage is auditable end to end.
+
+The objective is not maximum results: explore broadly enough not to miss anything attractive, then narrow hard to opportunities that are profitable, recurring or sizeable, accessible, compliant and executable under the user's current constraints.
+
 ## Supplier discovery is a separate research layer
 
 The official-domain allowlist governs procurement-source discovery and procurement facts. It does not govern supplier research.
@@ -106,10 +110,6 @@ Food        — 12 queries — 27 hits
 ```
 
 The finished coverage statement stays at the top of the report as the run's header, so what was searched is always visible next to what was found.
-
-The Procurement Watch states, in a coverage block: categories searched, queries executed, candidates discovered, candidates after deduplication, candidates passing execution constraints, deep investigations performed, top opportunities, categories producing the strongest opportunities, and categories searched that produced nothing strong. Plus the per-source coverage table (method, pages searched, records kept, what was not reachable). Search coverage is auditable end to end.
-
-The objective is not maximum results: explore broadly enough not to miss anything attractive, then narrow hard to opportunities that are profitable, recurring or sizeable, accessible, compliant and executable under the user's current constraints.
 
 ## Report integrity
 
