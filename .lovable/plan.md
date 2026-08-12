@@ -55,6 +55,20 @@ After the cash-flow gate, each opportunity is evaluated against its own constrai
 
 Prominent on every card and report entry: Estimated Gross Profit · Estimated Gross Margin · Cash Required Before Government Payment · Cash-Flow Compatibility · Supplier Payment Terms · Government Payment Terms · Compliance Restrictions.
 
+## Cash-flow constraint is configurable
+
+The working-capital constraint is on by default but never hard-coded. The Engine Configuration panel gains an **Execution Constraints → Working Capital** control: *Maximum cash required before government payment* — `$0` (default, zero-upfront-capital mode), `$25K`, `$50K`, `$100K`, `$250K`, `$500K`, `Custom`, `Unlimited`, and `Ignore working-capital constraint`.
+
+The selected value is the maximum acceptable cash gap for the current hunt:
+
+- `$0` — only cash-flow-compatible opportunities qualify.
+- `$100K` — opportunities needing up to $100K of pre-funding may qualify, subject to financing cost and the other constraints.
+- `Unlimited` — working capital excludes nothing, but the estimated cash requirement is still displayed and folded into the economics.
+
+Opportunity attractiveness and current execution capacity stay separate. An opportunity that fails the active cash constraint is never permanently rejected: it is tagged **CAPITAL CONSTRAINED** and shown in its own report/feed section, *Potential Opportunities — Financing Required*, so the same procurement universe can be re-run when financing capacity changes.
+
+Every report states the active setting prominently — `Working-capital limit for this hunt: $0` — and the engine never silently applies a different threshold than the one selected.
+
 ## The Procurement Watch report
 
 Generated after every hunt, dated, structured as:
