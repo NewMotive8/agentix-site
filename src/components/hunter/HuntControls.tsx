@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import {
   WORKING_CAPITAL_PRESETS,
   workingCapitalLabel,
+  type HuntMode,
+  type SourceStatusReport,
   type WorkingCapital,
 } from "@/lib/hunt/types";
 import {
@@ -26,6 +28,9 @@ interface Props {
   onChange: (p: HuntParams) => void;
   onRun: () => void;
   running: boolean;
+  mode: HuntMode;
+  onModeChange: (m: HuntMode) => void;
+  sourceStatuses: SourceStatusReport[];
 }
 
 const money = (v: number) =>
