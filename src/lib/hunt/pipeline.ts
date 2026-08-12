@@ -175,7 +175,7 @@ const SOUGHT_CLASSES = new Set(["SOURCES_SOUGHT", "PRESOLICITATION"]);
 const FUTURE_CLASSES = new Set(["SPECIAL_NOTICE", "INTENT_TO_BUNDLE"]);
 
 /** Wraps a live notice as a Scored record without inventing any economics. */
-function liveScored(n: LiveNotice, wc: WorkingCapital): Scored {
+function liveScored(n: LiveNotice): Scored {
   const o = n.opportunity;
   return {
     ...o,
@@ -202,8 +202,7 @@ function liveScored(n: LiveNotice, wc: WorkingCapital): Scored {
     verdict: "WATCH",
     verdictReason:
       "Live notice. Economics, quantities and supplier data are not published by this source, so no score is calculated — open the original notice to evaluate.",
-    _wc: undefined as never,
-  } as Scored;
+  };
 }
 
 async function runLive({ params, workingCapital, lookbackDays = 90 }: RunInput): Promise<HuntRun> {
@@ -227,7 +226,7 @@ async function runLive({ params, workingCapital, lookbackDays = 90 }: RunInput):
     return true;
   });
 
-  const scored = deduped.map((n) => liveScored(n, workingCapital));
+  const scored = deduped.map((n) => liveScored(n));
 
   const qualified = scored.filter((s) => OPEN_CLASSES.has(String(s.liveNoticeClass)) || s.liveNoticeClass === undefined);
   const sourcesSought = scored.filter((s) => SOUGHT_CLASSES.has(String(s.liveNoticeClass)));
