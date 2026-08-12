@@ -2,6 +2,8 @@ import type { Opportunity, SourceKey } from "@/lib/hunter-data";
 
 export type SourceStatus = "LIVE" | "HISTORICAL" | "SIMULATED" | "ESTIMATE";
 
+export type HuntMode = "demo" | "live";
+
 export type CashClass = "COMPATIBLE" | "FINANCEABLE" | "INCOMPATIBLE";
 
 export type WorkingCapitalMode = "limit" | "unlimited" | "ignore";
