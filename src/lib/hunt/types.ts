@@ -60,8 +60,8 @@ export type Provenance = {
   evidenceIds: string[];
   /** Notice type exactly as the source reported it (live records only). */
   rawNoticeType?: string;
-  /** Untouched source payload, kept for auditing live records. */
-  raw?: Record<string, unknown>;
+  /** Untouched source payload as JSON, kept for auditing live records. */
+  rawJson?: string;
 };
 
 export type Constraint = {

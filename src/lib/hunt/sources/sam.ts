@@ -168,7 +168,7 @@ export function toLiveNotice(rec: SamRecord, retrievedAt: string): LiveNotice {
     sourceUrl: noticeUrl(rec),
     retrievedAt,
     rawNoticeType: raw,
-    raw: rec as unknown as Record<string, unknown>,
+    rawJson: JSON.stringify(rec),
   };
 }
 

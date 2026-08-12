@@ -20,8 +20,8 @@ export type LiveNotice = {
   retrievedAt: string;
   /** Notice type exactly as reported by the source. Never inferred from the title. */
   rawNoticeType: string;
-  /** Untouched source record, kept so provenance can always be audited. */
-  raw: Record<string, unknown>;
+  /** Untouched source record as JSON, kept so provenance can always be audited. */
+  rawJson: string;
 };
 
 export type AdapterResult = {

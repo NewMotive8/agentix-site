@@ -185,7 +185,7 @@ function liveScored(n: LiveNotice): Scored {
       retrievedAt: n.retrievedAt,
       evidenceIds: [`${o.source}:${o.solicitation}`],
       rawNoticeType: n.rawNoticeType,
-      raw: n.raw,
+      rawJson: n.rawJson,
     },
     cash: estimateCashFlow(o),
     opportunityScore: 0,
