@@ -8,14 +8,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useHunterLight } from "@/lib/hunter-theme";
+import { defaultParams, type HuntParams } from "@/lib/hunter-data";
+import { PIPELINE_STAGES, runPipeline } from "@/lib/hunt/pipeline";
 import {
-  defaultParams,
-  explainHunt,
-  opportunities,
-  runHunt,
-  type HuntParams,
-  type Opportunity,
-} from "@/lib/hunter-data";
+  defaultWorkingCapital,
+  workingCapitalLabel,
+  type HuntRun,
+  type Scored,
+  type WorkingCapital,
+} from "@/lib/hunt/types";
 
 export const Route = createFileRoute("/hunter/")({
   head: () => ({
@@ -38,42 +39,95 @@ export const Route = createFileRoute("/hunter/")({
   component: HunterPage,
 });
 
+function currency(v: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(v);
+}
+
+function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-lg border border-border bg-card p-6">
+      <h3 className="text-[19px] font-bold">{title}</h3>
+      {subtitle && <p className="mt-1 text-[15px] text-muted-foreground">{subtitle}</p>}
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
 function HunterPage() {
   const { light, toggle } = useHunterLight();
   const [params, setParams] = useState<HuntParams>(defaultParams);
-  const [results, setResults] = useState<Opportunity[]>(() => runHunt(defaultParams, opportunities));
+  const [workingCapital, setWorkingCapital] = useState<WorkingCapital>(defaultWorkingCapital);
+  const [run, setRun] = useState<HuntRun>(() =>
+    runPipeline({ params: defaultParams, workingCapital: defaultWorkingCapital, demoMode: true }),
+  );
   const [running, setRunning] = useState(false);
-  const [active, setActive] = useState<Opportunity | null>(null);
+  const [stage, setStage] = useState(0);
+  const [active, setActive] = useState<Scored | null>(null);
   const [saved, setSaved] = useState<string[]>([]);
   const [dismissed, setDismissed] = useState<string[]>([]);
-  const [diag, setDiag] = useState(() => explainHunt(defaultParams, opportunities));
 
   const start = () => {
     setRunning(true);
-    window.setTimeout(() => {
-      setResults(runHunt(params, opportunities));
-      setDiag(explainHunt(params, opportunities));
-      setDismissed([]);
-      setRunning(false);
-    }, 1500);
+    setStage(0);
+    const step = (i: number) => {
+      if (i >= PIPELINE_STAGES.length) {
+        setRun(runPipeline({ params, workingCapital, demoMode: true }));
+        setDismissed([]);
+        setRunning(false);
+        return;
+      }
+      setStage(i);
+      window.setTimeout(() => step(i + 1), 260);
+    };
+    step(0);
   };
 
-  const visible = results.filter((o) => !dismissed.includes(o.id));
+  const visible = run.qualified.filter((o) => !dismissed.includes(o.id));
+  const constrained = run.capitalConstrained.filter((o) => !dismissed.includes(o.id));
+
+  const cardProps = (opp: Scored) => ({
+    opp,
+    saved: saved.includes(opp.id),
+    onInvestigate: () => setActive(opp),
+    onSave: () =>
+      setSaved((s) => (s.includes(opp.id) ? s.filter((i) => i !== opp.id) : [...s, opp.id])),
+    onDismiss: () => setDismissed((d) => [...d, opp.id]),
+  });
 
   return (
     <div className={cn("hunter flex h-screen overflow-hidden", light && "hunter-light")}>
       <div className="w-[340px] shrink-0">
-        <HuntControls params={params} onChange={setParams} onRun={start} running={running} />
+        <HuntControls
+          params={params}
+          workingCapital={workingCapital}
+          onWorkingCapitalChange={setWorkingCapital}
+          onChange={setParams}
+          onRun={start}
+          running={running}
+        />
       </div>
 
       <main className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
-          <h2 className="text-[20px] font-bold">Opportunities</h2>
+          <div>
+            <h2 className="text-[20px] font-bold">Procurement Watch</h2>
+            <p className="text-[15px] text-muted-foreground">
+              Working-capital limit for this hunt:{" "}
+              <span className="data font-bold text-primary">{workingCapitalLabel(run.workingCapital)}</span>
+            </p>
+          </div>
           <div className="flex items-center gap-4">
+            {run.isDemo && (
+              <span className="rounded-md border border-signal-amber/60 bg-signal-amber/15 px-3 py-1.5 text-[14px] font-bold text-signal-amber">
+                DEMO — simulated data
+              </span>
+            )}
             <span className="text-[16px] font-semibold text-primary">
-              {running
-                ? "Searching…"
-                : `${visible.length} of ${diag.total} opportunities, best first`}
+              {running ? "Running…" : `${visible.length} qualified · ${constrained.length} capital constrained`}
             </span>
             <Button variant="outline" size="sm" onClick={toggle} className="h-10 gap-2 text-[14px]">
               {light ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
@@ -84,49 +138,153 @@ function HunterPage() {
 
         <div className="flex-1 overflow-y-auto p-6">
           {running ? (
-            <div className="space-y-6">
-              {Array.from({ length: 3 }).map((_, i) => (
+            <div className="mx-auto max-w-5xl space-y-6">
+              <div className="rounded-lg border border-border bg-card p-6">
+                <h3 className="text-[18px] font-bold">Hunting…</h3>
+                <ol className="mt-4 space-y-2">
+                  {PIPELINE_STAGES.map((s, i) => (
+                    <li
+                      key={s.key}
+                      className={cn(
+                        "flex items-baseline justify-between gap-4 rounded-md border px-4 py-2.5 text-[16px]",
+                        i < stage
+                          ? "border-primary/40 bg-primary/10 text-primary"
+                          : i === stage
+                            ? "border-primary bg-primary/20 font-bold text-primary"
+                            : "border-border text-muted-foreground",
+                      )}
+                    >
+                      <span>{s.label}</span>
+                      <span className="text-[14px]">{s.detail}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              {Array.from({ length: 2 }).map((_, i) => (
                 <Skeleton key={i} className="h-72 w-full rounded-lg bg-muted" />
               ))}
             </div>
-          ) : visible.length === 0 ? (
-            <div className="mx-auto mt-16 max-w-md rounded-lg border border-border bg-card p-8 text-center">
-              <p className="text-[18px] font-semibold">No results match your settings.</p>
-              <p className="mt-2 text-[16px] text-muted-foreground">
-                Lower the minimum margin or contract value, allow more competitors, or turn on more
-                sources, then press Run hunt again.
-              </p>
-            </div>
           ) : (
             <div className="mx-auto max-w-5xl space-y-6">
-              {diag.excluded.length > 0 && (
-                <div className="rounded-lg border border-border bg-card p-4">
-                  <p className="text-[15px] font-semibold">
-                    {diag.total - diag.matched} opportunities were filtered out by your settings:
+              <Section
+                title="Executive summary"
+                subtitle={`Run ${new Date(run.ranAt).toLocaleString()} · ${run.queriesRun} queries · ${run.rawCandidates} raw candidates · ${run.afterDedupe} after de-duplication`}
+              >
+                <ul className="space-y-1.5 text-[16px] leading-relaxed text-foreground">
+                  {run.summary.map((line) => (
+                    <li key={line}>• {line}</li>
+                  ))}
+                </ul>
+              </Section>
+
+              {run.top3.length > 0 && (
+                <Section title="Top 3 to investigate" subtitle="Best combination of attractiveness and executability.">
+                  <ol className="space-y-3">
+                    {run.top3.map((o, i) => (
+                      <li key={o.id} className="rounded-md border border-primary/40 bg-primary/5 p-4">
+                        <div className="text-[17px] font-bold">
+                          {i + 1}. {o.product}
+                        </div>
+                        <p className="mt-1 text-[16px] leading-relaxed text-muted-foreground">
+                          {o.agency} · {o.solicitation} — Opportunity {o.opportunityScore}, Execution{" "}
+                          {o.executionScore}, executable margin {o.executableMarginPct}%, cash before payment{" "}
+                          {currency(o.cash.cashRequired)}. {o.verdictReason}
+                        </p>
+                      </li>
+                    ))}
+                  </ol>
+                </Section>
+              )}
+
+              {visible.length === 0 ? (
+                <div className="rounded-lg border border-border bg-card p-8 text-center">
+                  <p className="text-[18px] font-semibold">
+                    Only {visible.length} opportunities passed the current criteria.
                   </p>
-                  <ul className="mt-2 space-y-1 text-[15px] text-muted-foreground">
-                    {diag.excluded.map((e) => (
-                      <li key={e.reason}>
-                        <span className="data font-bold text-foreground">{e.count}</span> — {e.reason}
+                  <p className="mt-2 text-[16px] text-muted-foreground">
+                    Raise the working-capital limit, lower the minimum margin or contract value, or turn on
+                    more sources, then run the hunt again.
+                  </p>
+                </div>
+              ) : (
+                visible.map((opp) => <OpportunityCard key={opp.id} {...cardProps(opp)} />)
+              )}
+
+              {constrained.length > 0 && (
+                <Section
+                  title="Potential opportunities — financing required"
+                  subtitle={`Attractive, but above the working-capital limit of ${workingCapitalLabel(run.workingCapital)}. Tagged CAPITAL CONSTRAINED, not rejected — re-run when financing capacity changes.`}
+                >
+                  <div className="space-y-6">
+                    {constrained.map((opp) => (
+                      <OpportunityCard key={opp.id} {...cardProps(opp)} />
+                    ))}
+                  </div>
+                </Section>
+              )}
+
+              {run.sourcesSought.length > 0 && (
+                <Section title="Sources sought / presolicitations" subtitle="Kept separate from active bids.">
+                  <ul className="space-y-2 text-[16px]">
+                    {run.sourcesSought.map((o) => (
+                      <li key={o.id}>
+                        <span className="font-semibold">{o.product}</span> — {o.agency} · {o.solicitation}
                       </li>
                     ))}
                   </ul>
-                </div>
+                </Section>
               )}
-              {visible.map((opp) => (
-                <OpportunityCard
-                  key={opp.id}
-                  opp={opp}
-                  saved={saved.includes(opp.id)}
-                  onInvestigate={() => setActive(opp)}
-                  onSave={() =>
-                    setSaved((s) =>
-                      s.includes(opp.id) ? s.filter((i) => i !== opp.id) : [...s, opp.id],
-                    )
-                  }
-                  onDismiss={() => setDismissed((d) => [...d, opp.id])}
-                />
-              ))}
+
+              {run.futureSignals.length > 0 && (
+                <Section title="Future procurement signals" subtitle="Forecasts, frameworks and market surveys.">
+                  <ul className="space-y-2 text-[16px]">
+                    {run.futureSignals.map((o) => (
+                      <li key={o.id}>
+                        <span className="font-semibold">{o.product}</span> — {o.agency}, deadline {o.deadline}
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              {run.families.length > 0 && (
+                <Section title="Procurement families" subtitle="Related notices consolidated before scoring.">
+                  <ul className="space-y-2 text-[16px]">
+                    {run.families.map((f) => (
+                      <li key={f.id}>
+                        <span className="font-semibold">{f.label}</span> — {f.members.length} notices,{" "}
+                        {currency(f.aggregateValue)} aggregate, buyers: {f.buyers.join(", ")}
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              <Section title="Repeat demand signals" subtitle="Per-NSN history behind the demand score.">
+                <ul className="space-y-2 text-[16px]">
+                  {[...run.qualified, ...run.capitalConstrained]
+                    .filter((o) => o.repeatDemandScore >= 50)
+                    .slice(0, 8)
+                    .map((o) => (
+                      <li key={o.id}>
+                        <span className="data font-semibold">{o.nsn}</span> — score {o.repeatDemandScore};{" "}
+                        {o.investigation.historicalQty.map((h) => `${h.year}: ${h.qty}`).join(" · ")}
+                      </li>
+                    ))}
+                </ul>
+              </Section>
+
+              {run.rejected.length > 0 && (
+                <Section title="Interesting but rejected" subtitle="One line each, so nothing disappears silently.">
+                  <ul className="space-y-2 text-[16px] text-muted-foreground">
+                    {run.rejected.map(({ opp, reason }) => (
+                      <li key={opp.id}>
+                        <span className="font-semibold text-foreground">{opp.product}</span> — {reason}
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
             </div>
           )}
         </div>
