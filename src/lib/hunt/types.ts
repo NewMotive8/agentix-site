@@ -55,6 +55,10 @@ export type Provenance = {
   sourceUrl: string;
   retrievedAt: string;
   evidenceIds: string[];
+  /** Notice type exactly as the source reported it (live records only). */
+  rawNoticeType?: string;
+  /** Untouched source payload, kept for auditing live records. */
+  raw?: unknown;
 };
 
 export type Constraint = {
@@ -97,7 +101,12 @@ export type ProcurementFamily = {
 export type HuntRun = {
   id: string;
   ranAt: string;
+  mode: HuntMode;
   isDemo: boolean;
+  /** Per-source connectivity for this run. */
+  sourceStatuses: SourceStatusReport[];
+  /** A report may only call itself LIVE PROCUREMENT DATA when liveClean is true. */
+  integrity: { liveClean: boolean; reason?: string };
   workingCapital: WorkingCapital;
   queriesRun: number;
   rawCandidates: number;
