@@ -352,6 +352,38 @@ export function HuntControls({
           </Field>
 
           <Field
+            label="Hide catalogue / portal pages"
+            hint="Keeps results to notices that name an actual product. Turn off to also see catalogue and programme landing pages."
+            value={coverage.hideCatalogues ? "On" : "Off"}
+          >
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <Checkbox
+                checked={coverage.hideCatalogues}
+                onCheckedChange={(v) => patchCoverage({ hideCatalogues: v === true })}
+                className="size-5"
+              />
+              <span className="text-[14px] font-semibold text-foreground">
+                Only show notices with an identifiable item
+              </span>
+            </label>
+          </Field>
+
+          <Field
+            label="Minimum margin (simulated data only)"
+            hint="Skip anything with less profit margin than this."
+            value={`${params.minMargin}%`}
+          >
+            <Slider
+              min={10}
+              max={80}
+              step={1}
+              value={[params.minMargin]}
+              onValueChange={([v]) => patch({ minMargin: v })}
+              className="py-2 [&_[data-slot=slider-thumb]]:size-6"
+            />
+          </Field>
+
+          <Field
             label="Minimum contract value"
             hint="Skip contracts smaller than this total value."
             value={money(params.minValue)}
