@@ -1,6 +1,6 @@
 import { SOURCE_LABELS, type SourceKey } from "@/lib/hunter-data";
 import { CATEGORY_FAMILIES } from "./categories";
-import { buildQueryPlan, type Coverage } from "./querymatrix";
+import { activeCategories, buildQueryPlan, CUSTOM_CATEGORY_ID, type Coverage } from "./querymatrix";
 import { searchSam } from "./sam.server";
 import type { LiveNotice } from "./sources/types";
 import {
@@ -34,7 +34,10 @@ const HITS_PER_QUERY = 8;
 
 /** Stage 1+2 for a single category: broad discovery, then normalisation. */
 export async function discoverCategory(input: CategoryDiscoveryInput): Promise<CategoryDiscoveryResult> {
-  const cat = CATEGORY_FAMILIES.find((c) => c.id === input.categoryId);
+  const custom = input.categoryId === CUSTOM_CATEGORY_ID;
+  const cat = custom
+    ? activeCategories({ ...input.coverage, categories: [] })[0]
+    : CATEGORY_FAMILIES.find((c) => c.id === input.categoryId);
   const label = cat?.label ?? input.categoryId;
   const errors: string[] = [];
   const notices: LiveNotice[] = [];
@@ -67,7 +70,9 @@ export async function discoverCategory(input: CategoryDiscoveryInput): Promise<C
   }
 
   const plan = buildQueryPlan(
-    { ...input.coverage, mode: "categories", categories: [input.categoryId] },
+    custom
+      ? { ...input.coverage, categories: [] }
+      : { ...input.coverage, categories: [input.categoryId] },
     input.sources,
   );
   const retrievedAt = new Date().toISOString();
@@ -131,6 +136,24 @@ type AiNotice = {
 type AiSuppliers = { suppliers?: Partial<SupplierClaim>[] };
 
 export async function deepInvestigate(input: DeepInput): Promise<DeepInvestigation> {
+  try {
+    return await runDeepInvestigation(input);
+  } catch (err) {
+    return {
+      opportunityId: input.opportunityId,
+      summary: [],
+      requirements: [],
+      complianceFlags: [],
+      suppliers: [],
+      documentUrls: [],
+      evidence: [],
+      ranAt: new Date().toISOString(),
+      note: err instanceof Error ? err.message : "The research pass could not be completed.",
+    };
+  }
+}
+
+async function runDeepInvestigation(input: DeepInput): Promise<DeepInvestigation> {
   const ranAt = new Date().toISOString();
   const base: DeepInvestigation = {
     opportunityId: input.opportunityId,

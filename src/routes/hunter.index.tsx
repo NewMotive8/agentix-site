@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, ChevronDown } from "lucide-react";
 import { HuntControls } from "@/components/hunter/HuntControls";
 import { OpportunityCard } from "@/components/hunter/OpportunityCard";
 import { InvestigationDrawer } from "@/components/hunter/InvestigationDrawer";
@@ -57,6 +57,27 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
       <h3 className="text-[19px] font-bold">{title}</h3>
       {subtitle && <p className="mt-1 text-[15px] text-muted-foreground">{subtitle}</p>}
       <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+/** Audit and engine detail: present, but folded away by default. */
+function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className="rounded-lg border border-border bg-card">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left"
+      >
+        <span>
+          <span className="block text-[17px] font-bold">{title}</span>
+          {subtitle && <span className="block text-[14px] text-muted-foreground">{subtitle}</span>}
+        </span>
+        <ChevronDown className={cn("h-5 w-5 shrink-0 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <div className="border-t border-border p-6">{children}</div>}
     </section>
   );
 }
@@ -184,7 +205,7 @@ function HunterPage() {
                 </h3>
                 <dl className="mt-3 grid gap-x-8 gap-y-1.5 text-[16px] sm:grid-cols-2">
                   {[
-                    ["Universe", coverage.mode === "all" ? "All categories" : coverage.mode === "categories" ? `${coverage.categories.length || "all"} selected categories` : `${coverage.mode.toUpperCase()}: ${coverage.terms || "(none entered)"}`],
+                    ["Hunting in", coverage.mode === "categories" ? `${coverage.categories.length} selected ${coverage.categories.length === 1 ? "market" : "markets"}` : `${coverage.mode.toUpperCase()}: ${coverage.terms || "(none entered)"}`],
                     ["Sources", (Object.keys(params.sources) as (keyof typeof params.sources)[]).filter((k) => params.sources[k]).map((k) => SOURCE_LABELS[k]).join(" · ")],
                     ["Discovery", mode === "live" ? "Web (official procurement domains) + API where available" : "Simulated corpus"],
                     ["Raw target", String(coverage.rawTarget)],
@@ -266,22 +287,46 @@ function HunterPage() {
             </div>
           ) : (
             <div className="mx-auto max-w-5xl space-y-6">
-              <Section
-                title="Executive summary"
-                subtitle={`Run ${ranAtLabel} · ${run.queriesRun} queries · ${run.rawCandidates} raw candidates · ${run.afterDedupe} after de-duplication`}
-              >
-                <div className="mb-4 rounded-md border border-primary/50 bg-primary/10 p-4 text-[15px]">
-                  <div className="data font-bold text-primary">
-                    {run.isDemo ? "DEMO HUNT — SIMULATED DATA" : "LIVE HUNT"}
-                  </div>
-                  <div className="mt-1 text-foreground">
-                    Universe: {run.coverageStatement.universe} · Sources: {run.coverageStatement.sources} ·
-                    Discovery: {run.coverageStatement.discovery} · Raw target:{" "}
-                    {run.coverageStatement.rawTarget} · Working-capital limit:{" "}
-                    {run.coverageStatement.workingCapital} · Deep investigations:{" "}
-                    {run.coverageStatement.deepInvestigations}
-                  </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-card px-5 py-3 text-[15px]">
+                <span className={cn("data font-bold", run.isDemo ? "text-signal-amber" : "text-primary")}>
+                  {run.isDemo ? "DEMO — SIMULATED" : "LIVE"}
+                </span>
+                <span className="font-semibold text-foreground">
+                  {visible.length} {visible.length === 1 ? "opportunity" : "opportunities"}
+                </span>
+                <span className="text-muted-foreground">{run.coverageStatement.universe}</span>
+                <span className="text-muted-foreground">Searched {ranAtLabel}</span>
+                <Button size="sm" variant="outline" className="ml-auto h-9 text-[14px]" onClick={() => start()}>
+                  Run again
+                </Button>
+              </div>
+
+              {visible.length === 0 ? (
+                <div className="rounded-lg border border-border bg-card p-8 text-center">
+                  <p className="text-[18px] font-semibold">Nothing came back worth showing.</p>
+                  <p className="mt-2 text-[16px] text-muted-foreground">
+                    Try a different category, broaden your keywords, raise the working-capital limit or
+                    turn on more sources, then run again.
+                  </p>
                 </div>
+              ) : (
+                visible.map((opp) => <OpportunityCard key={opp.id} {...cardProps(opp)} />)
+              )}
+
+              {constrained.length > 0 && (
+                <Section
+                  title="Need financing first"
+                  subtitle={`Attractive, but they tie up more cash than your ${workingCapitalLabel(run.workingCapital)} limit. Kept here, not thrown away.`}
+                >
+                  <div className="space-y-6">
+                    {constrained.map((opp) => (
+                      <OpportunityCard key={opp.id} {...cardProps(opp)} />
+                    ))}
+                  </div>
+                </Section>
+              )}
+
+              <Panel title="Run report" subtitle="What the engine did, in its own words.">
                 <ul className="mb-4 space-y-1 text-[15px]">
                   {run.sourceStatuses.map((s) => (
                     <li
@@ -297,13 +342,14 @@ function HunterPage() {
                     <li key={line}>• {line}</li>
                   ))}
                 </ul>
-              </Section>
+                <p className="mt-3 text-[14px] text-muted-foreground">
+                  {run.queriesRun} queries · {run.rawCandidates} raw candidates · {run.afterDedupe} after
+                  de-duplication · working-capital limit {run.coverageStatement.workingCapital}
+                </p>
+              </Panel>
 
               {run.categories.length > 0 && (
-                <Section
-                  title="Coverage audit"
-                  subtitle="Every category the engine searched, with the queries executed and hits returned."
-                >
+                <Panel title="Coverage audit" subtitle="Every market searched, with queries run and hits returned.">
                   <ul className="space-y-1 text-[16px]">
                     {run.categories.map((c) => (
                       <li key={c.id} className="data flex justify-between gap-4">
@@ -314,169 +360,39 @@ function HunterPage() {
                       </li>
                     ))}
                   </ul>
-                </Section>
+                </Panel>
               )}
 
-              {run.deepInvestigations.length > 0 && (
-                <Section
-                  title="Deep investigations"
-                  subtitle="Stage 4 — official notice documents read, then supplier research on the open web. Supplier findings are commercial research, not government-confirmed."
+              {(run.sourcesSought.length > 0 || run.futureSignals.length > 0) && (
+                <Panel
+                  title="Too early to bid"
+                  subtitle="Market surveys and forecasts — useful for positioning, not for quoting."
                 >
-                  <div className="space-y-5">
-                    {run.deepInvestigations.map((d) => {
-                      const opp = [...run.qualified, ...run.capitalConstrained].find(
-                        (o) => o.id === d.opportunityId,
-                      );
-                      return (
-                        <div key={d.opportunityId} className="rounded-md border border-border p-4">
-                          <div className="text-[17px] font-bold">{opp?.product ?? d.opportunityId}</div>
-                          {d.summary.length > 0 && (
-                            <ul className="mt-2 space-y-1 text-[16px] text-foreground">
-                              {d.summary.map((s) => (
-                                <li key={s}>• {s}</li>
-                              ))}
-                            </ul>
-                          )}
-                          {d.complianceFlags.length > 0 && (
-                            <p className="mt-2 text-[15px] text-signal-amber">
-                              Compliance flags: {d.complianceFlags.join(" · ")}
-                            </p>
-                          )}
-                          {d.suppliers.length > 0 ? (
-                            <div className="mt-3 space-y-1.5">
-                              <div className="text-[13px] font-semibold uppercase tracking-wide text-signal-blue">
-                                Potential suppliers — public web research, not government-confirmed
-                              </div>
-                              {d.suppliers.map((s) => (
-                                <div key={`${s.name}-${s.sourceUrl}`} className="text-[15px]">
-                                  <span className="font-bold">{s.name}</span>{" "}
-                                  <span className="data rounded border border-border px-1.5 py-0.5 text-[13px] font-semibold text-muted-foreground">
-                                    {s.type}
-                                  </span>{" "}
-                                  · {s.country} ·{" "}
-                                  <a
-                                    href={s.sourceUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-signal-blue underline underline-offset-2"
-                                  >
-                                    source
-                                  </a>{" "}
-                                  <span className="text-muted-foreground">
-                                    retrieved {s.retrievedAt.slice(0, 10)} — {s.evidence}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="mt-2 text-[15px] text-muted-foreground">{d.note}</p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Section>
-              )}
-
-              {run.top3.length > 0 && (
-                <Section title="Top 3 to investigate" subtitle="Best combination of attractiveness and executability.">
-                  <ol className="space-y-3">
-                    {run.top3.map((o, i) => (
-                      <li key={o.id} className="rounded-md border border-primary/40 bg-primary/5 p-4">
-                        <div className="text-[17px] font-bold">
-                          {i + 1}. {o.product}
-                        </div>
-                        <p className="mt-1 text-[16px] leading-relaxed text-muted-foreground">
-                          {o.agency} · {o.solicitation} — Opportunity {o.opportunityScore}, Execution{" "}
-                          {o.executionScore}, executable margin {o.executableMarginPct}%, cash before payment{" "}
-                          {currency(o.cash.cashRequired)}. {o.verdictReason}
-                        </p>
-                      </li>
-                    ))}
-                  </ol>
-                </Section>
-              )}
-
-              {visible.length === 0 ? (
-                <div className="rounded-lg border border-border bg-card p-8 text-center">
-                  <p className="text-[18px] font-semibold">
-                    Only {visible.length} opportunities passed the current criteria.
-                  </p>
-                  <p className="mt-2 text-[16px] text-muted-foreground">
-                    Raise the working-capital limit, lower the minimum margin or contract value, or turn on
-                    more sources, then run the hunt again.
-                  </p>
-                </div>
-              ) : (
-                visible.map((opp) => <OpportunityCard key={opp.id} {...cardProps(opp)} />)
-              )}
-
-              {constrained.length > 0 && (
-                <Section
-                  title="Potential opportunities — financing required"
-                  subtitle={`Attractive, but above the working-capital limit of ${workingCapitalLabel(run.workingCapital)}. Tagged CAPITAL CONSTRAINED, not rejected — re-run when financing capacity changes.`}
-                >
-                  <div className="space-y-6">
-                    {constrained.map((opp) => (
-                      <OpportunityCard key={opp.id} {...cardProps(opp)} />
-                    ))}
-                  </div>
-                </Section>
-              )}
-
-              {run.sourcesSought.length > 0 && (
-                <Section title="Sources sought / presolicitations" subtitle="Kept separate from active bids.">
                   <ul className="space-y-2 text-[16px]">
-                    {run.sourcesSought.map((o) => (
+                    {[...run.sourcesSought, ...run.futureSignals].map((o) => (
                       <li key={o.id}>
-                        <span className="font-semibold">{o.product}</span> — {o.agency} · {o.solicitation}
+                        <span className="font-semibold">{o.product}</span> — {o.agency}
                       </li>
                     ))}
                   </ul>
-                </Section>
-              )}
-
-              {run.futureSignals.length > 0 && (
-                <Section title="Future procurement signals" subtitle="Forecasts, frameworks and market surveys.">
-                  <ul className="space-y-2 text-[16px]">
-                    {run.futureSignals.map((o) => (
-                      <li key={o.id}>
-                        <span className="font-semibold">{o.product}</span> — {o.agency}, deadline {o.deadline}
-                      </li>
-                    ))}
-                  </ul>
-                </Section>
+                </Panel>
               )}
 
               {run.families.length > 0 && (
-                <Section title="Procurement families" subtitle="Related notices consolidated before scoring.">
+                <Panel title="Related buys" subtitle="Notices that look like the same programme.">
                   <ul className="space-y-2 text-[16px]">
                     {run.families.map((f) => (
                       <li key={f.id}>
                         <span className="font-semibold">{f.label}</span> — {f.members.length} notices,{" "}
-                        {currency(f.aggregateValue)} aggregate, buyers: {f.buyers.join(", ")}
+                        {currency(f.aggregateValue)} together, buyers: {f.buyers.join(", ")}
                       </li>
                     ))}
                   </ul>
-                </Section>
+                </Panel>
               )}
 
-              <Section title="Repeat demand signals" subtitle="Per-NSN history behind the demand score.">
-                <ul className="space-y-2 text-[16px]">
-                  {[...run.qualified, ...run.capitalConstrained]
-                    .filter((o) => o.repeatDemandScore >= 50)
-                    .slice(0, 8)
-                    .map((o) => (
-                      <li key={o.id}>
-                        <span className="data font-semibold">{o.nsn}</span> — score {o.repeatDemandScore};{" "}
-                        {o.investigation.historicalQty.map((h) => `${h.year}: ${h.qty}`).join(" · ")}
-                      </li>
-                    ))}
-                </ul>
-              </Section>
-
               {run.rejected.length > 0 && (
-                <Section title="Interesting but rejected" subtitle="One line each, so nothing disappears silently.">
+                <Panel title="Not shown, and why" subtitle="Nothing disappears silently.">
                   <ul className="space-y-2 text-[16px] text-muted-foreground">
                     {run.rejected.map(({ opp, reason }) => (
                       <li key={opp.id}>
@@ -484,7 +400,7 @@ function HunterPage() {
                       </li>
                     ))}
                   </ul>
-                </Section>
+                </Panel>
               )}
             </div>
           )}

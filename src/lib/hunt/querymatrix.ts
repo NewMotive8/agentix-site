@@ -44,7 +44,10 @@ export type PlannedQuery = {
   query: string;
 };
 
-export type CoverageMode = "all" | "categories" | "fsc" | "naics" | "keywords" | "nsn";
+export type CoverageMode = "categories" | "fsc" | "naics" | "keywords" | "nsn";
+
+/** A hunt must be aimed: at most three category families per run. */
+export const MAX_CATEGORIES = 3;
 
 export type Coverage = {
   mode: CoverageMode;
@@ -61,13 +64,39 @@ export type Coverage = {
 };
 
 export const defaultCoverage: Coverage = {
-  mode: "all",
-  categories: [],
+  mode: "categories",
+  categories: ["aerospace"],
   terms: "",
   weight: 1,
   rawTarget: 100,
   deepInvestigations: 10,
 };
+
+/** True when the current coverage describes a runnable hunt. */
+export function coverageReady(c: Coverage): boolean {
+  if (c.mode === "categories") return c.categories.length > 0;
+  return c.terms.trim().length > 0;
+}
+
+export const CUSTOM_CATEGORY_ID = "custom";
+
+/** The category families a run will actually search. */
+export function activeCategories(coverage: Coverage): CategoryFamily[] {
+  if (coverage.categories.length > 0) return categoriesFor(coverage.categories).slice(0, MAX_CATEGORIES);
+  const terms = coverage.terms
+    .split(/[,\n]/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  return [
+    {
+      id: CUSTOM_CATEGORY_ID,
+      label: terms.length > 0 ? `Your search: ${terms.slice(0, 3).join(", ")}` : "Your search",
+      vocabulary: terms,
+      fsc: terms,
+      naics: terms,
+    },
+  ];
+}
 
 function termsFor(cat: CategoryFamily, coverage: Coverage): string[] {
   const perCategory = Math.max(2, Math.min(8, Math.round(3 * coverage.weight)));
@@ -77,7 +106,7 @@ function termsFor(cat: CategoryFamily, coverage: Coverage): string[] {
     .filter(Boolean);
 
   if (coverage.mode === "keywords" || coverage.mode === "nsn") {
-    return custom.slice(0, perCategory);
+    return (custom.length > 0 ? custom : cat.vocabulary).slice(0, perCategory);
   }
   if (coverage.mode === "fsc") {
     const codes = custom.length > 0 ? custom : cat.fsc;
@@ -95,8 +124,7 @@ function termsFor(cat: CategoryFamily, coverage: Coverage): string[] {
 
 /** Builds the full category x source x terminology query matrix for a run. */
 export function buildQueryPlan(coverage: Coverage, sources: SourceKey[]): PlannedQuery[] {
-  const cats =
-    coverage.mode === "categories" ? categoriesFor(coverage.categories) : categoriesFor([]);
+  const cats = activeCategories(coverage);
   const out: PlannedQuery[] = [];
   for (const cat of cats) {
     const terms = termsFor(cat, coverage);

@@ -7,9 +7,9 @@ import {
 } from "@/lib/hunter-data";
 import { noticeKind, scoreOpportunity } from "./score";
 import { estimateCashFlow } from "./cashflow";
-import { CATEGORY_FAMILIES, categoriesFor } from "./categories";
-import { buildQueryPlan, type Coverage } from "./querymatrix";
-import { discoverCategoryFn, deepInvestigateFn } from "./hunt.functions";
+import { activeCategories, buildQueryPlan, type Coverage } from "./querymatrix";
+import { discoverCategoryFn, deepInvestigateFn, estimateOpportunityFn } from "./hunt.functions";
+import { scoreLiveSignal } from "./signal";
 import type { LiveNotice, SourceStatusReport } from "./sources/types";
 import {
   workingCapitalLabel,
@@ -78,11 +78,9 @@ const money = (v: number) =>
 function coverageStatement(input: RunInput, sources: SourceKey[], discovery: string) {
   const { coverage, workingCapital } = input;
   const universe =
-    coverage.mode === "all"
-      ? "All categories"
-      : coverage.mode === "categories"
-        ? `${coverage.categories.length || CATEGORY_FAMILIES.length} selected categories`
-        : `${coverage.mode.toUpperCase()}: ${coverage.terms || "(none entered)"}`;
+    coverage.mode === "categories"
+      ? activeCategories(coverage).map((c) => c.label).join(" · ")
+      : `${coverage.mode.toUpperCase()}: ${coverage.terms || "(none entered)"}`;
   return {
     universe,
     sources: sources.map((k) => SOURCE_LABELS[k]).join(" · "),
@@ -117,7 +115,7 @@ function emptyRun(base: Partial<HuntRun>): HuntRun {
     categories: [],
     deepInvestigations: [],
     coverageStatement: {
-      universe: "All categories",
+      universe: "",
       sources: "",
       discovery: "Web + API where available",
       rawTarget: 100,
@@ -243,7 +241,7 @@ function liveScored(n: LiveNotice): Scored {
 async function runLive(input: RunInput): Promise<HuntRun> {
   const { params, workingCapital, coverage, onProgress } = input;
   const sourceKeysUsed = (Object.keys(params.sources) as SourceKey[]).filter((k) => params.sources[k]);
-  const cats = coverage.mode === "categories" ? categoriesFor(coverage.categories) : categoriesFor([]);
+  const cats = activeCategories(coverage);
 
   const progress: CategoryProgress[] = cats.map((c) => ({
     id: c.id,
@@ -317,6 +315,9 @@ async function runLive(input: RunInput): Promise<HuntRun> {
   // Stage 4 — deep investigation of the strongest opportunities.
   emit(3);
   const deepInvestigations: DeepInvestigation[] = [];
+  // Provisional signal ordering (no research yet) so the best notices are researched first.
+  for (const s of qualified) s.signal = scoreLiveSignal(s);
+  qualified.sort((a, b) => (b.signal?.score ?? 0) - (a.signal?.score ?? 0));
   const targets = qualified.slice(0, Math.max(0, coverage.deepInvestigations));
   for (const t of targets) {
     try {
@@ -329,20 +330,39 @@ async function runLive(input: RunInput): Promise<HuntRun> {
           sourceLabel: t.sourceLabel,
         },
       });
+      if (!res) continue;
       deepInvestigations.push(res);
-      if (res.summary.length > 0) t.aiSummary = res.summary.join(" ");
-      if (res.complianceFlags.length > 0) {
+      t.deep = res;
+      if (res.summary?.length > 0) t.aiSummary = res.summary.join(" ");
+      if (res.complianceFlags?.length > 0) {
         t.constraints = res.complianceFlags.map((label) => ({
           label,
           state: "watch" as const,
           evidence: `Extracted from the official notice page (${t.provenance.sourceUrl}), retrieved ${res.ranAt.slice(0, 10)}.`,
         }));
       }
+      t.signal = scoreLiveSignal(t, res);
+      try {
+        t.estimates = await estimateOpportunityFn({
+          data: {
+            title: t.product,
+            buyer: t.agency,
+            categoryLabel: t.categoryLabel ?? "",
+            solicitation: t.solicitation,
+            noticeSummary: [t.aiSummary, ...(res.requirements ?? [])].join(" ").slice(0, 5000),
+            supplierCount: res.suppliers?.length ?? 0,
+          },
+        });
+      } catch {
+        /* an estimate failure never invents data */
+      }
     } catch {
       /* an investigation failure never invents data */
     }
     emit(3);
   }
+
+  qualified.sort((a, b) => (b.signal?.score ?? 0) - (a.signal?.score ?? 0));
 
   // Stage 5 — report.
   emit(4);
