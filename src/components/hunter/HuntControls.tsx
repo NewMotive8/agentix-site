@@ -214,7 +214,7 @@ export function HuntControls({
 
           <Field
             label="Category coverage"
-            hint="What the engine explores before any profit or capital filter is applied."
+            hint={`Aim the hunt: up to ${MAX_CATEGORIES} markets, or type your own terms.`}
           >
             <div className="grid grid-cols-2 gap-2">
               {COVERAGE_MODES.map((m) => (
@@ -236,26 +236,44 @@ export function HuntControls({
             </div>
 
             {coverage.mode === "categories" && (
-              <div className="mt-3 max-h-64 space-y-1.5 overflow-y-auto rounded-md border border-border p-3">
-                {CATEGORY_FAMILIES.map((c) => {
-                  const on = coverage.categories.includes(c.id);
-                  return (
-                    <label key={c.id} className="flex cursor-pointer items-start gap-2.5">
-                      <Checkbox
-                        checked={on}
-                        onCheckedChange={(v) =>
-                          patchCoverage({
-                            categories: v
-                              ? [...coverage.categories, c.id]
-                              : coverage.categories.filter((x) => x !== c.id),
-                          })
-                        }
-                        className="mt-0.5 size-5"
-                      />
-                      <span className="text-[14px] font-semibold text-foreground">{c.label}</span>
-                    </label>
-                  );
-                })}
+              <div className="mt-3 rounded-md border border-border p-3">
+                <div className="mb-2 flex items-baseline justify-between">
+                  <span className="text-[13px] font-semibold text-muted-foreground">
+                    {coverage.categories.length} of {MAX_CATEGORIES} selected
+                  </span>
+                  {coverage.categories.length >= MAX_CATEGORIES && (
+                    <span className="text-[12px] text-muted-foreground">Deselect one to change</span>
+                  )}
+                </div>
+                <div className="max-h-64 space-y-1.5 overflow-y-auto">
+                  {CATEGORY_FAMILIES.map((c) => {
+                    const on = coverage.categories.includes(c.id);
+                    const full = !on && coverage.categories.length >= MAX_CATEGORIES;
+                    return (
+                      <label
+                        key={c.id}
+                        className={cn(
+                          "flex items-start gap-2.5",
+                          full ? "cursor-not-allowed opacity-45" : "cursor-pointer",
+                        )}
+                      >
+                        <Checkbox
+                          checked={on}
+                          disabled={full}
+                          onCheckedChange={(v) =>
+                            patchCoverage({
+                              categories: v
+                                ? [...coverage.categories, c.id].slice(0, MAX_CATEGORIES)
+                                : coverage.categories.filter((x) => x !== c.id),
+                            })
+                          }
+                          className="mt-0.5 size-5"
+                        />
+                        <span className="text-[14px] font-semibold text-foreground">{c.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -529,9 +547,16 @@ export function HuntControls({
       </div>
 
       <div className="sticky bottom-0 border-t border-border bg-card p-5">
+        {!coverageReady(coverage) && (
+          <p className="mb-2 text-[13px] font-semibold text-signal-amber">
+            {coverage.mode === "categories"
+              ? "Pick at least one category to aim the hunt."
+              : "Type at least one search term first."}
+          </p>
+        )}
         <Button
           onClick={onRun}
-          disabled={running}
+          disabled={running || !coverageReady(coverage)}
           className="h-14 w-full gap-2 text-[17px] font-bold"
         >
           <Play className="h-5 w-5" />
