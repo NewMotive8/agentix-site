@@ -31,6 +31,7 @@ interface Props {
   coverage: Coverage;
   onCoverageChange: (c: Coverage) => void;
   onRun: () => void;
+  onStop: () => void;
   running: boolean;
   mode: HuntMode;
   onModeChange: (m: HuntMode) => void;
@@ -95,6 +96,7 @@ export function HuntControls({
   coverage,
   onCoverageChange,
   onRun,
+  onStop,
   running,
   mode,
   onModeChange,
@@ -554,14 +556,23 @@ export function HuntControls({
               : "Type at least one search term first."}
           </p>
         )}
-        <Button
-          onClick={onRun}
-          disabled={running || !coverageReady(coverage)}
-          className="h-14 w-full gap-2 text-[17px] font-bold"
-        >
-          <Play className="h-5 w-5" />
-          {running ? "Searching…" : "Run hunt"}
-        </Button>
+        {running ? (
+          <Button
+            onClick={onStop}
+            variant="outline"
+            className="h-14 w-full gap-2 border-destructive text-[17px] font-bold text-destructive hover:bg-destructive/10"
+          >
+            <Square className="h-5 w-5" /> Stop search
+          </Button>
+        ) : (
+          <Button
+            onClick={onRun}
+            disabled={!coverageReady(coverage)}
+            className="h-14 w-full gap-2 text-[17px] font-bold"
+          >
+            <Play className="h-5 w-5" /> Run hunt
+          </Button>
+        )}
       </div>
     </aside>
   );
