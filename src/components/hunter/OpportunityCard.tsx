@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Bookmark, Search, X } from "lucide-react";
+import { Bookmark, ChevronDown, ExternalLink, Search, X } from "lucide-react";
 import type { Opportunity } from "@/lib/hunter-data";
-import type { Scored } from "@/lib/hunt/types";
+import type { EstimateConfidence, Scored } from "@/lib/hunt/types";
 import { CASH_LABEL } from "@/lib/hunt/cashflow";
 
 export const currency = (v: number) =>
@@ -55,6 +56,169 @@ function Stat({ label, value, strong }: { label: string; value: string; strong?:
         {value}
       </div>
     </div>
+  );
+}
+
+const CONF_LABEL: Record<EstimateConfidence, string> = {
+  HIGH: "High confidence",
+  MEDIUM: "Medium confidence",
+  LOW: "Low confidence",
+};
+
+const CONF_CLASS: Record<EstimateConfidence, string> = {
+  HIGH: "border-primary/60 bg-primary/10 text-primary",
+  MEDIUM: "border-signal-amber/60 bg-signal-amber/15 text-signal-amber",
+  LOW: "border-border bg-muted text-muted-foreground",
+};
+
+/** Live notice: business framing first, procurement codes as secondary metadata. */
+function LiveBody({ opp }: { opp: Scored }) {
+  const [openReport, setOpenReport] = useState(false);
+  const sig = opp.signal;
+  const deep = opp.deep;
+  const codes = [
+    opp.nsn && `NSN ${opp.nsn}`,
+    opp.partNumber && `P/N ${opp.partNumber}`,
+    opp.fsc && `Class ${opp.fsc}`,
+    opp.solicitation && opp.solicitation !== "—" && `Ref ${opp.solicitation}`,
+    opp.provenance.rawNoticeType,
+  ].filter(Boolean) as string[];
+
+  return (
+    <>
+      {sig && (
+        <div className="mt-4 rounded-md border border-border bg-muted/40 p-4">
+          <div className="text-[15px] font-bold text-foreground">Why this is interesting</div>
+          <ul className="mt-2 space-y-1.5 text-[16px] leading-relaxed text-foreground">
+            {sig.reasons.map((r) => (
+              <li key={r}>• {r}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-[16px] leading-relaxed text-signal-amber">{sig.risk}</p>
+        </div>
+      )}
+
+      {opp.estimates && opp.estimates.items.length > 0 && (
+        <div className="mt-4 rounded-md border border-dashed border-signal-blue/60 bg-signal-blue/5 p-4">
+          <div className="text-[13px] font-bold uppercase tracking-wide text-signal-blue">
+            Estimated — not published by the buyer
+          </div>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            {opp.estimates.items.map((e) => (
+              <div key={e.label}>
+                <div className="text-[13px] text-muted-foreground">{e.label}</div>
+                <div className="data mt-0.5 text-[17px] font-bold text-foreground">{e.value}</div>
+                <span
+                  className={cn(
+                    "mt-1 inline-block rounded border px-1.5 py-0.5 text-[12px] font-semibold",
+                    CONF_CLASS[e.confidence],
+                  )}
+                >
+                  {CONF_LABEL[e.confidence]}
+                </span>
+                <p className="mt-1 text-[14px] leading-snug text-muted-foreground">{e.basis}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[13px] text-muted-foreground">{opp.estimates.note}</p>
+        </div>
+      )}
+
+      {codes.length > 0 && (
+        <p className="mt-4 text-[13px] text-muted-foreground">{codes.join(" · ")}</p>
+      )}
+
+      {deep && (
+        <div className="mt-4 rounded-md border border-border">
+          <button
+            type="button"
+            onClick={() => setOpenReport((v) => !v)}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-[16px] font-bold"
+          >
+            Full research report
+            <ChevronDown className={cn("h-5 w-5 transition-transform", openReport && "rotate-180")} />
+          </button>
+          {openReport && (
+            <div className="space-y-4 border-t border-border p-4">
+              {deep.summary.length > 0 && (
+                <div>
+                  <div className="text-[15px] font-bold">What the buyer is asking for</div>
+                  <ul className="mt-1.5 space-y-1 text-[16px] text-foreground">
+                    {deep.summary.map((s) => (
+                      <li key={s}>• {s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {deep.requirements.length > 0 && (
+                <div>
+                  <div className="text-[15px] font-bold">What you would have to deliver</div>
+                  <ul className="mt-1.5 space-y-1 text-[16px] text-foreground">
+                    {deep.requirements.slice(0, 8).map((s) => (
+                      <li key={s}>• {s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {deep.complianceFlags.length > 0 && (
+                <div>
+                  <div className="text-[15px] font-bold">Rules that could block you</div>
+                  <p className="mt-1 text-[16px] text-signal-amber">{deep.complianceFlags.join(" · ")}</p>
+                </div>
+              )}
+              <div>
+                <div className="text-[15px] font-bold">Who could supply it</div>
+                <p className="text-[13px] text-muted-foreground">
+                  Commercial web research — not confirmed by the buyer.
+                </p>
+                {deep.suppliers.length > 0 ? (
+                  <div className="mt-2 space-y-1.5">
+                    {deep.suppliers.map((s) => (
+                      <div key={`${s.name}-${s.sourceUrl}`} className="text-[15px]">
+                        <span className="font-bold">{s.name}</span>{" "}
+                        <span className="data rounded border border-border px-1.5 py-0.5 text-[12px] font-semibold text-muted-foreground">
+                          {s.type}
+                        </span>{" "}
+                        · {s.country} ·{" "}
+                        <a
+                          href={s.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-signal-blue underline underline-offset-2"
+                        >
+                          source
+                        </a>{" "}
+                        <span className="text-muted-foreground">{s.evidence}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-[15px] text-muted-foreground">
+                    {deep.note || "No supplier could be evidenced from public sources yet."}
+                  </p>
+                )}
+              </div>
+              {deep.documentUrls.length > 0 && (
+                <div className="space-y-1 text-[15px]">
+                  <div className="text-[15px] font-bold">Documents found</div>
+                  {deep.documentUrls.map((u) => (
+                    <a
+                      key={u}
+                      href={u}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block truncate text-signal-blue underline underline-offset-2"
+                    >
+                      {u}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
