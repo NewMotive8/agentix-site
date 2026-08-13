@@ -15,7 +15,7 @@ const coverage = z.object({
 });
 
 const discoverSchema = z.object({
-  categoryId: z.string().min(1).max(40),
+  categoryId: z.string().min(1).max(60),
   sources: z.array(sourceKey).min(1).max(5),
   coverage,
 });
