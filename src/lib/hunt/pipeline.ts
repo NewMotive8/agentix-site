@@ -69,6 +69,8 @@ export type RunInput = {
   mode: HuntMode;
   coverage: Coverage;
   lookbackDays?: number;
+  /** Abort the hunt cooperatively; whatever was found so far is still reported. */
+  signal?: AbortSignal;
   onProgress?: (p: { categories: CategoryProgress[]; stage: number }) => void;
 };
 
@@ -240,6 +242,7 @@ function liveScored(n: LiveNotice): Scored {
 
 async function runLive(input: RunInput): Promise<HuntRun> {
   const { params, workingCapital, coverage, onProgress } = input;
+  const stopped = () => input.signal?.aborted === true;
   const sourceKeysUsed = (Object.keys(params.sources) as SourceKey[]).filter((k) => params.sources[k]);
   const cats = activeCategories(coverage);
 
@@ -280,7 +283,7 @@ async function runLive(input: RunInput): Promise<HuntRun> {
     }
     progress[i].state = "done";
     emit(0);
-    if (notices.length >= coverage.rawTarget) {
+    if (stopped() || notices.length >= coverage.rawTarget) {
       for (let j = i + 1; j < cats.length; j++) progress[j].state = "done";
       break;
     }
@@ -320,6 +323,7 @@ async function runLive(input: RunInput): Promise<HuntRun> {
   qualified.sort((a, b) => (b.signal?.score ?? 0) - (a.signal?.score ?? 0));
   const targets = qualified.slice(0, Math.max(0, coverage.deepInvestigations));
   for (const t of targets) {
+    if (stopped()) break;
     try {
       const res = await deepInvestigateFn({
         data: {
@@ -394,6 +398,7 @@ async function runLive(input: RunInput): Promise<HuntRun> {
     `Working-capital limit for this hunt: ${workingCapitalLabel(workingCapital)} — applied after discovery, never before it.`,
     errors.length > 0 ? `Retrieval issues: ${errors.join(" · ")}` : "No retrieval errors.",
   ];
+  if (stopped()) summary.unshift("Hunt stopped by the operator — these are partial results from the work completed before the stop.");
 
   return emptyRun({
     mode: "live",
@@ -417,6 +422,7 @@ async function runLive(input: RunInput): Promise<HuntRun> {
     summary,
     categories: progress,
     deepInvestigations,
+    cancelled: stopped(),
     coverageStatement: coverageStatement(
       input,
       sourceKeysUsed,

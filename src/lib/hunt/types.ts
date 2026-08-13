@@ -212,6 +212,8 @@ export type HuntRun = {
   summary: string[];
   categories: CategoryProgress[];
   deepInvestigations: DeepInvestigation[];
+  /** True when the operator stopped the hunt before it finished. Partial results are kept. */
+  cancelled?: boolean;
   coverageStatement: {
     universe: string;
     sources: string;
