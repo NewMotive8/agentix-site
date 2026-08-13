@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Sun, Moon, ChevronDown } from "lucide-react";
+import { Sun, Moon, ChevronDown, Square } from "lucide-react";
 import { HuntControls } from "@/components/hunter/HuntControls";
 import { OpportunityCard } from "@/components/hunter/OpportunityCard";
 import { InvestigationDrawer } from "@/components/hunter/InvestigationDrawer";
@@ -96,8 +96,12 @@ function HunterPage() {
   const [saved, setSaved] = useState<string[]>([]);
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [ranAtLabel, setRanAtLabel] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const start = (nextMode: HuntMode = mode) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setRunning(true);
     setStage(0);
     setProgress([]);
@@ -106,24 +110,32 @@ function HunterPage() {
       workingCapital,
       coverage,
       mode: nextMode,
+      signal: controller.signal,
       onProgress: (p) => {
         setProgress(p.categories);
         setStage(p.stage);
       },
     }).then((result) => {
+      if (abortRef.current !== controller) return;
       setRun(result);
       setRanAtLabel(new Date(result.ranAt).toLocaleString());
       setDismissed([]);
       setStage(PIPELINE_STAGES.length - 1);
       setRunning(false);
+      abortRef.current = null;
     });
   };
+
+  const stop = () => abortRef.current?.abort();
 
   // Live mode is the default: run once on mount, in the browser only.
   useEffect(() => {
     start("live");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Never leave a hunt running behind us.
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const visible = (run?.qualified ?? []).filter((o) => !dismissed.includes(o.id));
   const constrained = (run?.capitalConstrained ?? []).filter((o) => !dismissed.includes(o.id));
@@ -148,6 +160,7 @@ function HunterPage() {
           coverage={coverage}
           onCoverageChange={setCoverage}
           onRun={() => start()}
+          onStop={stop}
           running={running}
           mode={mode}
           onModeChange={(m) => {
@@ -189,6 +202,16 @@ function HunterPage() {
             <span className="text-[16px] font-semibold text-primary">
               {running ? "Running…" : `${visible.length} qualified · ${constrained.length} capital constrained`}
             </span>
+            {running && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={stop}
+                className="h-10 gap-2 border-destructive text-[14px] font-bold text-destructive"
+              >
+                <Square className="h-4 w-4" /> Stop
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={toggle} className="h-10 gap-2 text-[14px]">
               {light ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               {light ? "Dark" : "Light"}
@@ -252,6 +275,9 @@ function HunterPage() {
                 <h3 className="text-[18px] font-bold">
                   {mode === "live" ? "Hunting live sources…" : "Replaying simulated corpus…"}
                 </h3>
+                <p className="mt-1 text-[15px] text-muted-foreground">
+                  You can press Stop at any time — whatever has already been found is kept and shown.
+                </p>
                 <ul className="mt-3 space-y-1 text-[15px]">
                   {(run?.sourceStatuses ?? []).map((s) => (
                     <li
@@ -296,6 +322,9 @@ function HunterPage() {
                 </span>
                 <span className="text-muted-foreground">{run.coverageStatement.universe}</span>
                 <span className="text-muted-foreground">Searched {ranAtLabel}</span>
+                {run.cancelled && (
+                  <span className="data font-bold text-destructive">STOPPED EARLY — partial results</span>
+                )}
                 <Button size="sm" variant="outline" className="ml-auto h-9 text-[14px]" onClick={() => start()}>
                   Run again
                 </Button>
