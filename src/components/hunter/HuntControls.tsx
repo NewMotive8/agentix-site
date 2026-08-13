@@ -33,6 +33,7 @@ interface Props {
   onRun: () => void;
   onStop: () => void;
   running: boolean;
+  stopping?: boolean;
   mode: HuntMode;
   onModeChange: (m: HuntMode) => void;
   sourceStatuses: SourceStatusReport[];
@@ -98,6 +99,7 @@ export function HuntControls({
   onRun,
   onStop,
   running,
+  stopping,
   mode,
   onModeChange,
   sourceStatuses,
@@ -559,10 +561,11 @@ export function HuntControls({
         {running ? (
           <Button
             onClick={onStop}
+            disabled={stopping}
             variant="outline"
             className="h-14 w-full gap-2 border-destructive text-[17px] font-bold text-destructive hover:bg-destructive/10"
           >
-            <Square className="h-5 w-5" /> Stop search
+            <Square className="h-5 w-5" /> {stopping ? "Stopping…" : "Stop search"}
           </Button>
         ) : (
           <Button
