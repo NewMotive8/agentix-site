@@ -6,6 +6,17 @@ In LIVE mode the discovery layer only ever returns a notice: title, buyer, URL, 
 
 The old version felt clearer because every card had a score and a "why this is interesting" paragraph. That is what comes back.
 
+## Guiding principle: the machine speaks procurement, the interface speaks business
+
+All procurement jargon stays in the engine and in the audit trail. The visible interface talks money, risk and time.
+
+- Card headline is the **business question**, not the notice title: what is being bought, by whom, worth roughly how much, closing when.
+- Wording: "Worth pursuing" / "Watch" / "Skip" instead of verdict codes; "Money you'd need up front" instead of cash-flow classification codes; "Who else can supply this" instead of source-approval status.
+- Codes (NSN, FSC/PSC, solicitation number, notice type) stay on the card but as small secondary metadata under the business line — needed to act, never leading.
+- Every number answers a business question: can I win it, can I fund it, what do I make, when do I get paid, what could kill it.
+- Audit language (query matrix, de-duplication, coverage weight, notice classification) lives only in the collapsed run report at the bottom.
+- Glossary in the manual stays as the bridge between the two vocabularies.
+
 ## 1. Search focus: up to 3 categories, or keywords
 
 - Remove the "All categories" coverage mode. A hunt must be aimed.
@@ -25,6 +36,8 @@ The old version felt clearer because every card had a score and a "why this is i
 - whether the deep investigation succeeded, and what it found (quantities stated, compliance flags)
 
 **Why this is interesting.** 3 to 5 short bullets naming the exact facts behind the score, plus one bullet naming the main risk or unknown. Every bullet derives from retrieved text — nothing invented.
+
+The score is labelled in business terms on the card — "Signal 78 — Worth a look" — with the procurement detail behind it in the bullets.
 
 **Estimates block, clearly labelled.** Below the verified section, a visually distinct panel headed `ESTIMATED — not published by the source`: estimated contract value, margin range, cash needed before payment, supplier availability. Each carries a confidence level (High / Medium / Low) and a one-line basis. These never mix with verified fields and never feed the Signal score.
 
