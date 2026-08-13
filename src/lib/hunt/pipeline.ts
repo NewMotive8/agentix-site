@@ -8,7 +8,12 @@ import {
 import { noticeKind, scoreOpportunity } from "./score";
 import { estimateCashFlow } from "./cashflow";
 import { activeCategories, buildQueryPlan, type Coverage } from "./querymatrix";
-import { discoverCategoryFn, deepInvestigateFn, estimateOpportunityFn } from "./hunt.functions";
+import {
+  discoverCategoryFn,
+  deepInvestigateFn,
+  estimateOpportunityFn,
+  identifyItemFn,
+} from "./hunt.functions";
 import { scoreLiveSignal } from "./signal";
 import type { LiveNotice, SourceStatusReport } from "./sources/types";
 import {
@@ -305,7 +310,7 @@ async function runLive(input: RunInput): Promise<HuntRun> {
   emit(2);
   const scored = deduped.map(liveScored);
   const cls = (s: Scored) => String(s.liveNoticeClass ?? "UNCLASSIFIED");
-  const qualified = scored.filter((s) => OPEN_CLASSES.has(cls(s)));
+  let qualified = scored.filter((s) => OPEN_CLASSES.has(cls(s)));
   const sourcesSought = scored.filter((s) => SOUGHT_CLASSES.has(cls(s)));
   const futureSignals = scored.filter((s) => FUTURE_CLASSES.has(cls(s)));
   const rejected = scored
@@ -313,14 +318,57 @@ async function runLive(input: RunInput): Promise<HuntRun> {
     .map((opp) => ({ opp, reason: `Notice type reported by source: ${opp.provenance.rawNoticeType ?? "unknown"}` }))
     .slice(0, 20);
 
+  // Stage 3b — read each notice page and say, in plain English, what is being bought.
+  // Ordered by the provisional signal so the best notices are identified first.
+  for (const s of qualified) s.signal = scoreLiveSignal(s);
+  qualified.sort((a, b) => (b.signal?.score ?? 0) - (a.signal?.score ?? 0));
+
+  const pageText = new Map<string, string>();
+  const identifyLimit = Math.min(qualified.length, Math.max(coverage.deepInvestigations, 12));
+  let identified = 0;
+  for (const t of qualified.slice(0, identifyLimit)) {
+    if (stopped()) break;
+    try {
+      const res = await identifyItemFn({
+        data: {
+          opportunityId: t.id,
+          title: t.product,
+          url: t.provenance.sourceUrl,
+          categoryLabel: t.categoryLabel ?? "",
+        },
+      });
+      if (!res) continue;
+      t.identity = res.identity;
+      if (res.identity.productName) t.product = res.identity.productName;
+      if (res.markdown) pageText.set(t.id, res.markdown.slice(0, 20000));
+      identified++;
+    } catch {
+      /* identification failure never invents a product */
+    }
+    emit(2);
+  }
+
+  const catalogues: Scored[] = [];
+  if (coverage.hideCatalogues) {
+    const keep: Scored[] = [];
+    for (const s of qualified) {
+      if (s.identity?.itemKind === "CATALOGUE") catalogues.push(s);
+      else keep.push(s);
+    }
+    qualified = keep;
+    for (const c of catalogues.slice(0, 10)) {
+      rejected.push({
+        opp: c,
+        reason: "Catalogue or portal page — no single identifiable product on the page",
+      });
+    }
+  }
+
   const families = buildFamilies(qualified);
 
   // Stage 4 — deep investigation of the strongest opportunities.
   emit(3);
   const deepInvestigations: DeepInvestigation[] = [];
-  // Provisional signal ordering (no research yet) so the best notices are researched first.
-  for (const s of qualified) s.signal = scoreLiveSignal(s);
-  qualified.sort((a, b) => (b.signal?.score ?? 0) - (a.signal?.score ?? 0));
   const targets = qualified.slice(0, Math.max(0, coverage.deepInvestigations));
   for (const t of targets) {
     if (stopped()) break;
@@ -332,6 +380,7 @@ async function runLive(input: RunInput): Promise<HuntRun> {
           url: t.provenance.sourceUrl,
           solicitation: t.solicitation,
           sourceLabel: t.sourceLabel,
+          pageMarkdown: pageText.get(t.id) ?? "",
         },
       });
       if (!res) continue;
@@ -394,6 +443,11 @@ async function runLive(input: RunInput): Promise<HuntRun> {
       : "No category returned any candidate.",
     `Discovery method: ${apiUsed.size > 0 ? "structured API where credentials exist, public official web pages elsewhere" : "public official web pages (no procurement API credentials configured)"}. Simulated records are never used in LIVE MODE.`,
     `${qualified.length} open/unclassified notices · ${sourcesSought.length} sources sought or presolicitation · ${futureSignals.length} future signals.`,
+    `${identified} notice pages read to identify the actual product${
+      catalogues.length > 0
+        ? `; ${catalogues.length} catalogue/portal pages hidden (turn the filter off in Search settings to see them)`
+        : ""
+    }.`,
     `${deepInvestigations.length} deep investigations completed; ${deepInvestigations.reduce((a, d) => a + d.suppliers.length, 0)} supplier candidates identified from public commercial sources (not government-confirmed).`,
     `Working-capital limit for this hunt: ${workingCapitalLabel(workingCapital)} — applied after discovery, never before it.`,
     errors.length > 0 ? `Retrieval issues: ${errors.join(" · ")}` : "No retrieval errors.",

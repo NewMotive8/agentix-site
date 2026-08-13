@@ -337,6 +337,23 @@ export function HuntControls({
           </Field>
 
           <Field
+            label="Hide catalogue / portal pages"
+            hint="Keeps results to notices that name an actual product. Turn off to also see catalogue and programme landing pages."
+            value={coverage.hideCatalogues ? "On" : "Off"}
+          >
+            <label className="flex cursor-pointer items-center gap-2.5">
+              <Checkbox
+                checked={coverage.hideCatalogues}
+                onCheckedChange={(v) => patchCoverage({ hideCatalogues: v === true })}
+                className="size-5"
+              />
+              <span className="text-[14px] font-semibold text-foreground">
+                Only show notices with an identifiable item
+              </span>
+            </label>
+          </Field>
+
+          <Field
             label="Minimum margin"
             hint="Skip anything with less profit margin than this."
             value={`${params.minMargin}%`}

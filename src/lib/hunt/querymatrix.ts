@@ -61,6 +61,8 @@ export type Coverage = {
   rawTarget: number;
   /** How many of the strongest opportunities get a stage-4 deep investigation. */
   deepInvestigations: number;
+  /** Hide catalogue / portal landing pages that do not describe a specific item. */
+  hideCatalogues: boolean;
 };
 
 export const defaultCoverage: Coverage = {
@@ -70,6 +72,7 @@ export const defaultCoverage: Coverage = {
   weight: 1,
   rawTarget: 100,
   deepInvestigations: 10,
+  hideCatalogues: true,
 };
 
 /** True when the current coverage describes a runnable hunt. */

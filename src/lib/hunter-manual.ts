@@ -4,9 +4,9 @@ export const QUICK_STEPS: string[] = [
   "Choose up to three markets on the left (Aerospace, Ground vehicles, C4ISR and so on). You cannot search everything at once — narrow searches give readable results.",
   "Or type your own keywords instead, one per line. Keywords work on their own; you do not need a market selected.",
   "Set the working-capital limit to the cash you can actually put out before you get paid.",
-  "Press Run hunt. The engine searches official buyer sites, then shows one card per opportunity, strongest signal first.",
-  "Read the card: the Signal number, the 'Why this is interesting' bullets, then the risk line underneath.",
-  "Open 'Full research report' on the card for requirements, blocking rules and possible suppliers, or 'Open the original notice' to read the buyer's own page.",
+  "Press Run hunt. The engine searches official buyer sites, opens each notice page to work out what is actually being bought, then shows one card per opportunity, strongest signal first.",
+  "Read the card top-down: product name, one line saying what it is, then quantity, deadline, deal size, margin and Signal.",
+  "Open 'Money — full estimate' for contract size, margin, cash needed and sourcing difficulty; open 'Full research report' for requirements, blocking rules and possible suppliers.",
 ];
 
 export const CONTROL_TABLE: ManualRow[] = [
@@ -14,6 +14,7 @@ export const CONTROL_TABLE: ManualRow[] = [
   { term: "Keywords", text: "Type your own terms, one per line, and the engine builds searches around them. Keywords can be used alone, without any market selected." },
   { term: "Depth / coverage weight", text: "How many query variations the engine runs per market. Higher finds more but takes longer." },
   { term: "How many to research deeply", text: "The strongest few results get their documents opened and read, and suppliers researched. That work is slow, so it is capped." },
+  { term: "Hide catalogue / portal pages", text: "On by default. Keeps results to notices that name a real product and hides catalogue, framework and programme landing pages such as DLA ECAT. Turn it off if you want to see them anyway." },
   { term: "Working capital", text: "The most cash you can lay out before the buyer pays you. Anything needing more is not deleted — it moves to 'Need financing first'." },
   { term: "Where to search", text: "The official sources the engine is allowed to use. Sources actually reachable right now are listed as connected." },
   { term: "Advanced / Developer settings", text: "Contains Demo mode, which uses invented data for testing only. Normal use stays in LIVE mode; live and demo data are never mixed." },
@@ -29,13 +30,17 @@ export const PRESET_TABLE: ManualRow[] = [
 ];
 
 export const CARD_TABLE: ManualRow[] = [
+  { term: "Product name (the big line)", text: "Plain-English name of the item, read from the notice page itself — not the page title. Under it, one sentence saying what the item is and what it is for." },
+  { term: "Picture", text: "Shown only when a real picture of the item was found on the notice page. No picture means none was published — we never illustrate an item with a stand-in image. A 'Many items' tile means the notice covers a catalogue or a list rather than one product." },
+  { term: "One item / A few items / Many items", text: "Whether the notice buys a single identifiable product, a short list, or a catalogue. For lists and catalogues use the 'See the item list' link." },
+  { term: "Deal size / Margin (the green box)", text: "The headline money estimate. These are our estimates, not the buyer's numbers — open 'Money — full estimate' for the reasoning and confidence." },
   { term: "Signal (0-100)", text: "How strong the real, published evidence is: is it a live buy or just a survey, is there a deadline you can still meet, are there part identifiers, is the buyer specific. It is not a profit forecast." },
   { term: "Worth pursuing / Worth a look / Weak signal", text: "The one-line verdict next to the Signal number." },
   { term: "Why this is interesting", text: "Bullets built only from facts the buyer actually published. Nothing here is guessed." },
   { term: "The risk line", text: "The amber sentence under the bullets. Always read it — it names the thing most likely to kill the deal." },
-  { term: "Estimated — not published by the buyer", text: "The blue dashed box. Contract size, margin and cash needed are our estimates, each tagged High, Medium or Low confidence with the reasoning. Never quote these to anyone." },
-  { term: "Buyer / source / closes", text: "The line above the title: who is buying, which official site it came from, and the response deadline." },
-  { term: "Reference codes", text: "The grey line of NSN, part number, class and notice reference — needed when you contact the buyer, ignorable otherwise." },
+  { term: "Money — full estimate", text: "Collapsible panel. Contract size, margin, cash needed and sourcing difficulty, each tagged High, Medium or Low confidence with the reasoning. Never quote these to anyone." },
+  { term: "Buyer / source / quantity / closes", text: "The grey line under the product: who is buying, which official site it came from, how many are wanted and the response deadline." },
+  { term: "Reference codes", text: "NSN, part number, class and notice reference now live inside the full research report — needed when you contact the buyer, ignorable otherwise." },
   { term: "Full research report", text: "Collapsible panel: what the buyer wants, what you would have to deliver, rules that could block you, who could supply it, and the documents found." },
   { term: "Open the original notice", text: "Takes you to the buyer's own page. Anything important should be confirmed there." },
   { term: "Save / Dismiss", text: "Session only — both reset when you run a new hunt." },

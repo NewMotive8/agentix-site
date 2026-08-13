@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { discoverCategory, deepInvestigate } from "./discovery.server";
 import { estimateOpportunity } from "./estimate.server";
+import { identifyItem } from "./identify.server";
 
 const sourceKey = z.enum(["sam", "dibbs", "nspa", "ncia", "nato"]);
 
@@ -12,6 +13,7 @@ const coverage = z.object({
   weight: z.number().min(0.5).max(2).default(1),
   rawTarget: z.number().int().min(10).max(500).default(100),
   deepInvestigations: z.number().int().min(0).max(25).default(10),
+  hideCatalogues: z.boolean().default(true),
 });
 
 const discoverSchema = z.object({
@@ -30,6 +32,7 @@ const deepSchema = z.object({
   url: z.string().url(),
   solicitation: z.string().max(120).default("—"),
   sourceLabel: z.string().max(80).default(""),
+  pageMarkdown: z.string().max(20000).default(""),
 });
 
 export const deepInvestigateFn = createServerFn({ method: "POST" })
@@ -48,3 +51,14 @@ const estimateSchema = z.object({
 export const estimateOpportunityFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => estimateSchema.parse(data))
   .handler(async ({ data }) => estimateOpportunity(data));
+
+const identifySchema = z.object({
+  opportunityId: z.string().min(1).max(120),
+  title: z.string().min(1).max(400),
+  url: z.string().url(),
+  categoryLabel: z.string().max(120).default(""),
+});
+
+export const identifyItemFn = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => identifySchema.parse(data))
+  .handler(async ({ data }) => identifyItem(data));

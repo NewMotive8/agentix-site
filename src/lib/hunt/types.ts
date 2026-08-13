@@ -124,6 +124,23 @@ export type SignalScore = {
 
 export type EstimateConfidence = "HIGH" | "MEDIUM" | "LOW";
 
+/** Whether the notice buys one identifiable item, a short list, or a catalogue. */
+export type ItemKind = "SINGLE" | "FEW" | "CATALOGUE" | "UNKNOWN";
+
+/** What is actually being bought, read from the notice page itself. */
+export type ItemIdentity = {
+  productName: string;
+  whatItIs: string;
+  quantity: string;
+  itemKind: ItemKind;
+  itemListUrl: string;
+  imageUrl: string;
+  confidence: EstimateConfidence;
+  sourceUrl: string;
+  ranAt: string;
+  note: string;
+};
+
 export type EstimateItem = {
   label: string;
   value: string;
@@ -156,6 +173,8 @@ export type Scored = Opportunity & {
   categoryId?: string;
   categoryLabel?: string;
   fieldEvidence?: FieldEvidence[];
+  /** Plain-English product identification read from the notice page. */
+  identity?: ItemIdentity;
   /** Live-mode business score derived from published facts only. */
   signal?: SignalScore;
   /** Clearly-labelled estimates — not published by the source. */
