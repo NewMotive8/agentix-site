@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, ChevronDown } from "lucide-react";
 import { HuntControls } from "@/components/hunter/HuntControls";
 import { OpportunityCard } from "@/components/hunter/OpportunityCard";
 import { InvestigationDrawer } from "@/components/hunter/InvestigationDrawer";
@@ -57,6 +57,27 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
       <h3 className="text-[19px] font-bold">{title}</h3>
       {subtitle && <p className="mt-1 text-[15px] text-muted-foreground">{subtitle}</p>}
       <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+/** Audit and engine detail: present, but folded away by default. */
+function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className="rounded-lg border border-border bg-card">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left"
+      >
+        <span>
+          <span className="block text-[17px] font-bold">{title}</span>
+          {subtitle && <span className="block text-[14px] text-muted-foreground">{subtitle}</span>}
+        </span>
+        <ChevronDown className={cn("h-5 w-5 shrink-0 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <div className="border-t border-border p-6">{children}</div>}
     </section>
   );
 }
@@ -184,7 +205,7 @@ function HunterPage() {
                 </h3>
                 <dl className="mt-3 grid gap-x-8 gap-y-1.5 text-[16px] sm:grid-cols-2">
                   {[
-                    ["Universe", coverage.mode === "all" ? "All categories" : coverage.mode === "categories" ? `${coverage.categories.length || "all"} selected categories` : `${coverage.mode.toUpperCase()}: ${coverage.terms || "(none entered)"}`],
+                    ["Hunting in", coverage.mode === "categories" ? `${coverage.categories.length} selected ${coverage.categories.length === 1 ? "market" : "markets"}` : `${coverage.mode.toUpperCase()}: ${coverage.terms || "(none entered)"}`],
                     ["Sources", (Object.keys(params.sources) as (keyof typeof params.sources)[]).filter((k) => params.sources[k]).map((k) => SOURCE_LABELS[k]).join(" · ")],
                     ["Discovery", mode === "live" ? "Web (official procurement domains) + API where available" : "Simulated corpus"],
                     ["Raw target", String(coverage.rawTarget)],
