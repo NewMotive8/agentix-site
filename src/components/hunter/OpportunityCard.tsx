@@ -71,6 +71,36 @@ const CONF_CLASS: Record<EstimateConfidence, string> = {
   LOW: "border-border bg-muted text-muted-foreground",
 };
 
+/** Collapsible detail block — the card stays short until you ask for more. */
+function Fold({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-4 rounded-md border border-border">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-[16px] font-bold"
+      >
+        {title}
+        <ChevronDown className={cn("h-5 w-5 transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <div className="border-t border-border p-4">{children}</div>}
+    </div>
+  );
+}
+
+/** Pulls one estimate line out by keyword so it can headline the card. */
+function estimateOf(opp: Scored, keyword: string) {
+  return opp.estimates?.items.find((e) => e.label.toLowerCase().includes(keyword));
+}
+
+const KIND_LABEL: Record<string, string> = {
+  SINGLE: "One item",
+  FEW: "A few items",
+  CATALOGUE: "Many items — catalogue or framework",
+  UNKNOWN: "Item not stated on the page",
+};
+
 /** Live notice: business framing first, procurement codes as secondary metadata. */
 function LiveBody({ opp }: { opp: Scored }) {
   const [openReport, setOpenReport] = useState(false);
