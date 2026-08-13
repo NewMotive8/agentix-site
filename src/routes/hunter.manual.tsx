@@ -45,7 +45,7 @@ const NAV = [
   { id: "presets", label: "Strategy presets" },
   { id: "controls", label: "Every control" },
   { id: "cards", label: "Reading a card" },
-  { id: "drawer", label: "Investigation view" },
+  { id: "drawer", label: "Research report" },
   { id: "glossary", label: "Glossary" },
 ];
 
@@ -98,21 +98,21 @@ function ManualPage() {
           <ManualSection
             id="quick"
             title="Quick reference"
-            intro="The whole tool is four steps."
+            intro="Pick up to three markets (or type keywords), run, read the cards."
           >
             <NumberedList items={QUICK_STEPS} />
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
               <div className="rounded-lg border-2 border-primary bg-primary/10 p-4">
-                <div className="text-[20px] font-bold text-primary">Score above 80</div>
-                <p className="mt-1 text-[16px]">Strong. Worth investigating today.</p>
+                <div className="text-[20px] font-bold text-primary">Signal 70+</div>
+                <p className="mt-1 text-[16px]">Worth pursuing. Real buy, real deadline, enough detail to act.</p>
               </div>
               <div className="rounded-lg border-2 border-signal-amber bg-signal-amber/10 p-4">
-                <div className="text-[20px] font-bold text-signal-amber">Score 61 to 80</div>
-                <p className="mt-1 text-[16px]">Moderate. Something needs checking first.</p>
+                <div className="text-[20px] font-bold text-signal-amber">Signal 45 to 69</div>
+                <p className="mt-1 text-[16px]">Worth a look. Something is missing or the clock is tight.</p>
               </div>
               <div className="rounded-lg border-2 border-border bg-muted p-4">
-                <div className="text-[20px] font-bold text-muted-foreground">Score 60 or less</div>
-                <p className="mt-1 text-[16px]">Weak. Only look if you have spare time.</p>
+                <div className="text-[20px] font-bold text-muted-foreground">Signal under 45</div>
+                <p className="mt-1 text-[16px]">Weak signal. Usually a survey or forecast, not a buy.</p>
               </div>
             </div>
           </ManualSection>
@@ -128,7 +128,7 @@ function ManualPage() {
           <ManualSection
             id="presets"
             title="Strategy presets"
-            intro="Each preset is a saved combination of settings. Clicking one fills in the sliders and sources; it never searches on its own."
+            intro="Saved combinations of settings. Clicking one fills the controls; it never searches on its own."
           >
             <DefinitionList rows={PRESET_TABLE} />
           </ManualSection>
@@ -143,15 +143,15 @@ function ManualPage() {
           <ManualSection
             id="cards"
             title="Reading an opportunity card"
-            intro="Each result is one card. Read the score first, then the three coloured badges, then the analysis paragraph."
+            intro="Read the Signal number first, then 'Why this is interesting', then the amber risk line. Anything in the blue dashed box is our estimate, not the buyer's."
           >
             <DefinitionList rows={CARD_TABLE} />
           </ManualSection>
 
           <ManualSection
             id="drawer"
-            title="The investigation view"
-            intro="Pressing Investigate slides in a panel with the full research on one part. Close it with the X or the Escape key."
+            title="The full research report"
+            intro="On live results this sits inside the card — open 'Full research report'. Demo results still open the side panel."
           >
             <DefinitionList rows={DRAWER_TABLE} />
           </ManualSection>
