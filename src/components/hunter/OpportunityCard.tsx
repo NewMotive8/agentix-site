@@ -256,13 +256,23 @@ export function OpportunityCard({
         ? "border-signal-amber/60 bg-signal-amber/10 text-signal-amber"
         : "border-destructive/60 bg-destructive/10 text-destructive";
 
+  const sig = opp.signal;
+  const sigBand = !sig
+    ? { cls: "border-border bg-muted text-muted-foreground" }
+    : sig.score >= 70
+      ? { cls: "border-primary bg-primary/15 text-primary" }
+      : sig.score >= 45
+        ? { cls: "border-signal-amber bg-signal-amber/15 text-signal-amber" }
+        : { cls: "border-border bg-muted text-muted-foreground" };
+
   return (
     <article className="rounded-lg border border-border bg-card p-6 shadow-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-5">
         <div className="min-w-0">
           <div className="text-[14px] text-muted-foreground">
-            {opp.agency} · Solicitation <span className="data">{opp.solicitation}</span> ·{" "}
+            Buyer: <span className="font-semibold text-foreground">{opp.agency}</span> ·{" "}
             <span className="font-semibold text-signal-blue">{opp.sourceLabel}</span>
+            {opp.deadline && <> · Closes {opp.deadline}</>}
           </div>
           <h3 className="mt-1.5 text-[21px] font-bold leading-snug">{opp.product}</h3>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
@@ -289,10 +299,10 @@ export function OpportunityCard({
             >
               Open original notice
             </a>
-            <span className="text-muted-foreground">Retrieved {opp.provenance.retrievedAt.slice(0, 19).replace("T", " ")} UTC</span>
+            <span className="text-muted-foreground">Found {opp.provenance.retrievedAt.slice(0, 10)}</span>
           </div>
         </div>
-        {opp.analysisAvailable && (
+        {opp.analysisAvailable ? (
         <div className="flex shrink-0 gap-3">
           <div className={cn("rounded-lg border-2 px-4 py-2 text-center", band.cls)}>
             <div className="data text-[30px] font-bold leading-none">{opp.opportunityScore}</div>
@@ -305,28 +315,24 @@ export function OpportunityCard({
             <div className="text-[14px] font-bold">{execBand.word}</div>
           </div>
         </div>
+        ) : sig ? (
+          <div className={cn("shrink-0 rounded-lg border-2 px-4 py-2 text-center", sigBand.cls)}>
+            <div className="data text-[30px] font-bold leading-none">{sig.score}</div>
+            <div className="text-[13px] font-semibold">Signal</div>
+            <div className="text-[14px] font-bold">{sig.verdict}</div>
+          </div>
+        ) : (
+          <span />
         )}
       </div>
 
       {!opp.analysisAvailable && (
-        <div className="mt-4 rounded-md border border-border bg-muted/40 p-4">
-          <div className="text-[15px] font-bold text-foreground">
-            Scores and economics: NOT AVAILABLE
-          </div>
-          <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
-            This source publishes the notice only. Quantities, NSNs, unit prices, incumbents and
-            supplier data are not part of its response, so nothing is estimated here.
-          </p>
-          {opp.deadline && (
-            <p className="mt-2 text-[15px] text-foreground">
-              Response deadline: <span className="data font-semibold">{opp.deadline}</span>
-              {opp.fsc && <> · Classification code <span className="data font-semibold">{opp.fsc}</span></>}
-            </p>
-          )}
-          <div className="mt-4 flex flex-wrap gap-3">
+        <>
+          <LiveBody opp={opp} />
+          <div className="mt-5 flex flex-wrap gap-3">
             <Button asChild className="h-12 gap-2 px-6 text-[16px] font-bold">
               <a href={opp.provenance.sourceUrl} target="_blank" rel="noreferrer">
-                <Search className="h-5 w-5" /> Open on {opp.sourceLabel}
+                <ExternalLink className="h-5 w-5" /> Open the original notice
               </a>
             </Button>
             <Button onClick={onSave} variant="outline" className={cn("h-12 gap-2 px-5 text-[16px]", saved && "border-primary text-primary")}>
@@ -336,7 +342,7 @@ export function OpportunityCard({
               <X className="h-5 w-5" /> Dismiss
             </Button>
           </div>
-        </div>
+        </>
       )}
 
       {opp.analysisAvailable && (
