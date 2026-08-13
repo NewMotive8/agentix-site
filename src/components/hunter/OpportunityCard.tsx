@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Bookmark, ChevronDown, ExternalLink, Search, X } from "lucide-react";
+import { Bookmark, ChevronDown, ExternalLink, Layers, Search, X } from "lucide-react";
 import type { Opportunity } from "@/lib/hunter-data";
 import type { EstimateConfidence, Scored } from "@/lib/hunt/types";
 import { CASH_LABEL } from "@/lib/hunt/cashflow";
@@ -90,7 +90,7 @@ function LiveBody({ opp }: { opp: Scored }) {
         <div className="mt-4 rounded-md border border-border bg-muted/40 p-4">
           <div className="text-[15px] font-bold text-foreground">Why this is interesting</div>
           <ul className="mt-2 space-y-1.5 text-[16px] leading-relaxed text-foreground">
-            {sig.reasons.map((r) => (
+            {sig.reasons.slice(0, 3).map((r) => (
               <li key={r}>• {r}</li>
             ))}
           </ul>
@@ -99,11 +99,8 @@ function LiveBody({ opp }: { opp: Scored }) {
       )}
 
       {opp.estimates && opp.estimates.items.length > 0 && (
-        <div className="mt-4 rounded-md border border-dashed border-signal-blue/60 bg-signal-blue/5 p-4">
-          <div className="text-[13px] font-bold uppercase tracking-wide text-signal-blue">
-            Estimated — not published by the buyer
-          </div>
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+        <Fold title="Money — full estimate">
+          <div className="grid gap-4 sm:grid-cols-2">
             {opp.estimates.items.map((e) => (
               <div key={e.label}>
                 <div className="text-[13px] text-muted-foreground">{e.label}</div>
@@ -121,11 +118,7 @@ function LiveBody({ opp }: { opp: Scored }) {
             ))}
           </div>
           <p className="mt-3 text-[13px] text-muted-foreground">{opp.estimates.note}</p>
-        </div>
-      )}
-
-      {codes.length > 0 && (
-        <p className="mt-4 text-[13px] text-muted-foreground">{codes.join(" · ")}</p>
+        </Fold>
       )}
 
       {deep && (
@@ -140,6 +133,9 @@ function LiveBody({ opp }: { opp: Scored }) {
           </button>
           {openReport && (
             <div className="space-y-4 border-t border-border p-4">
+              {codes.length > 0 && (
+                <p className="text-[13px] text-muted-foreground">{codes.join(" · ")}</p>
+              )}
               {deep.summary.length > 0 && (
                 <div>
                   <div className="text-[15px] font-bold">What the buyer is asking for</div>
