@@ -354,7 +354,7 @@ export function HuntControls({
           </Field>
 
           <Field
-            label="Minimum margin (simulated data only)"
+            label="Minimum margin"
             hint="Skip anything with less profit margin than this."
             value={`${params.minMargin}%`}
           >
