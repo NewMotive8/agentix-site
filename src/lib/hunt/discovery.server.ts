@@ -79,14 +79,14 @@ export async function discoverCategory(input: CategoryDiscoveryInput): Promise<C
   for (const q of plan) {
     let hits: Awaited<ReturnType<typeof firecrawlSearch>> = [];
     let error: string | null = null;
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let attempt = 0; attempt < 3; attempt++) {
       try {
         hits = await firecrawlSearch(q.query, HITS_PER_QUERY);
         error = null;
         break;
       } catch (err) {
         error = err instanceof Error ? err.message : "search failed";
-        await new Promise((r) => setTimeout(r, 1200));
+        await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
       }
     }
     batches.push({ hits, error });
