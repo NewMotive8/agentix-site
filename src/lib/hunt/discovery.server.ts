@@ -123,6 +123,8 @@ export type DeepInput = {
   url: string;
   solicitation: string;
   sourceLabel: string;
+  /** Page text already fetched during identification, so we do not scrape twice. */
+  pageMarkdown?: string;
 };
 
 type AiNotice = {
@@ -171,11 +173,13 @@ async function runDeepInvestigation(input: DeepInput): Promise<DeepInvestigation
     return { ...base, note: "Web research is not configured for this project." };
   }
 
-  let markdown = "";
-  try {
-    markdown = await firecrawlScrape(input.url);
-  } catch (err) {
-    return { ...base, note: err instanceof Error ? err.message : "Could not retrieve the notice page." };
+  let markdown = input.pageMarkdown ?? "";
+  if (!markdown) {
+    try {
+      markdown = await firecrawlScrape(input.url);
+    } catch (err) {
+      return { ...base, note: err instanceof Error ? err.message : "Could not retrieve the notice page." };
+    }
   }
 
   const facts = await aiJson<AiNotice>(
