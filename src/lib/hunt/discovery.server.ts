@@ -136,6 +136,24 @@ type AiNotice = {
 type AiSuppliers = { suppliers?: Partial<SupplierClaim>[] };
 
 export async function deepInvestigate(input: DeepInput): Promise<DeepInvestigation> {
+  try {
+    return await runDeepInvestigation(input);
+  } catch (err) {
+    return {
+      opportunityId: input.opportunityId,
+      summary: [],
+      requirements: [],
+      complianceFlags: [],
+      suppliers: [],
+      documentUrls: [],
+      evidence: [],
+      ranAt: new Date().toISOString(),
+      note: err instanceof Error ? err.message : "The research pass could not be completed.",
+    };
+  }
+}
+
+async function runDeepInvestigation(input: DeepInput): Promise<DeepInvestigation> {
   const ranAt = new Date().toISOString();
   const base: DeepInvestigation = {
     opportunityId: input.opportunityId,
