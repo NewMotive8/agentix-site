@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Crosshair, Play, X, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CATEGORY_FAMILIES } from "@/lib/hunt/categories";
-import type { Coverage, CoverageMode } from "@/lib/hunt/querymatrix";
+import { coverageReady, MAX_CATEGORIES, type Coverage, type CoverageMode } from "@/lib/hunt/querymatrix";
 import {
   WORKING_CAPITAL_PRESETS,
   workingCapitalLabel,
@@ -57,8 +57,7 @@ const SOURCE_HINTS: Record<SourceKey, string> = {
 };
 
 const COVERAGE_MODES: { key: CoverageMode; label: string; hint: string }[] = [
-  { key: "all", label: "All categories", hint: "Search the full category matrix" },
-  { key: "categories", label: "Selected categories", hint: "Deeper pass on the categories you pick" },
+  { key: "categories", label: "Pick categories", hint: `Choose up to ${MAX_CATEGORIES} markets to hunt in` },
   { key: "fsc", label: "Specific FSC / PSC", hint: "Enter classification codes" },
   { key: "naics", label: "Specific NAICS", hint: "Enter NAICS codes" },
   { key: "keywords", label: "Keywords", hint: "Enter your own search terms" },
