@@ -7,9 +7,9 @@ import {
 } from "@/lib/hunter-data";
 import { noticeKind, scoreOpportunity } from "./score";
 import { estimateCashFlow } from "./cashflow";
-import { CATEGORY_FAMILIES, categoriesFor } from "./categories";
-import { buildQueryPlan, type Coverage } from "./querymatrix";
-import { discoverCategoryFn, deepInvestigateFn } from "./hunt.functions";
+import { activeCategories, buildQueryPlan, type Coverage } from "./querymatrix";
+import { discoverCategoryFn, deepInvestigateFn, estimateOpportunityFn } from "./hunt.functions";
+import { scoreLiveSignal } from "./signal";
 import type { LiveNotice, SourceStatusReport } from "./sources/types";
 import {
   workingCapitalLabel,
@@ -78,11 +78,9 @@ const money = (v: number) =>
 function coverageStatement(input: RunInput, sources: SourceKey[], discovery: string) {
   const { coverage, workingCapital } = input;
   const universe =
-    coverage.mode === "all"
-      ? "All categories"
-      : coverage.mode === "categories"
-        ? `${coverage.categories.length || CATEGORY_FAMILIES.length} selected categories`
-        : `${coverage.mode.toUpperCase()}: ${coverage.terms || "(none entered)"}`;
+    coverage.mode === "categories"
+      ? activeCategories(coverage).map((c) => c.label).join(" · ")
+      : `${coverage.mode.toUpperCase()}: ${coverage.terms || "(none entered)"}`;
   return {
     universe,
     sources: sources.map((k) => SOURCE_LABELS[k]).join(" · "),
@@ -117,7 +115,7 @@ function emptyRun(base: Partial<HuntRun>): HuntRun {
     categories: [],
     deepInvestigations: [],
     coverageStatement: {
-      universe: "All categories",
+      universe: "",
       sources: "",
       discovery: "Web + API where available",
       rawTarget: 100,
