@@ -97,12 +97,14 @@ function HunterPage() {
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [ranAtLabel, setRanAtLabel] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+  const [stopping, setStopping] = useState(false);
 
   const start = (nextMode: HuntMode = mode) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
     setRunning(true);
+    setStopping(false);
     setStage(0);
     setProgress([]);
     void runPipeline({
@@ -122,11 +124,16 @@ function HunterPage() {
       setDismissed([]);
       setStage(PIPELINE_STAGES.length - 1);
       setRunning(false);
+      setStopping(false);
       abortRef.current = null;
     });
   };
 
-  const stop = () => abortRef.current?.abort();
+  const stop = () => {
+    if (!abortRef.current) return;
+    setStopping(true);
+    abortRef.current.abort();
+  };
 
   // Live mode is the default: run once on mount, in the browser only.
   useEffect(() => {
@@ -162,6 +169,7 @@ function HunterPage() {
           onRun={() => start()}
           onStop={stop}
           running={running}
+          stopping={stopping}
           mode={mode}
           onModeChange={(m) => {
             setMode(m);
@@ -200,16 +208,21 @@ function HunterPage() {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-[16px] font-semibold text-primary">
-              {running ? "Running…" : `${visible.length} qualified · ${constrained.length} capital constrained`}
+              {running
+                ? stopping
+                  ? "Stopping — finishing the current step…"
+                  : "Running…"
+                : `${visible.length} qualified · ${constrained.length} capital constrained`}
             </span>
             {running && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={stop}
+                disabled={stopping}
                 className="h-10 gap-2 border-destructive text-[14px] font-bold text-destructive"
               >
-                <Square className="h-4 w-4" /> Stop
+                <Square className="h-4 w-4" /> {stopping ? "Stopping…" : "Stop"}
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={toggle} className="h-10 gap-2 text-[14px]">
