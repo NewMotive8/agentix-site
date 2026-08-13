@@ -114,6 +114,30 @@ export type Constraint = {
   evidence: string;
 };
 
+/** Business-facing score built only from published facts. */
+export type SignalScore = {
+  score: number;
+  verdict: "Worth pursuing" | "Worth watching" | "Low priority";
+  reasons: string[];
+  risk: string;
+};
+
+export type EstimateConfidence = "HIGH" | "MEDIUM" | "LOW";
+
+export type EstimateItem = {
+  label: string;
+  value: string;
+  confidence: EstimateConfidence;
+  basis: string;
+};
+
+/** Never mixed with verified fields, never feeds the signal score. */
+export type Estimates = {
+  items: EstimateItem[];
+  ranAt: string;
+  note: string;
+};
+
 export type Scored = Opportunity & {
   provenance: Provenance;
   cash: CashFlow;
@@ -132,6 +156,12 @@ export type Scored = Opportunity & {
   categoryId?: string;
   categoryLabel?: string;
   fieldEvidence?: FieldEvidence[];
+  /** Live-mode business score derived from published facts only. */
+  signal?: SignalScore;
+  /** Clearly-labelled estimates — not published by the source. */
+  estimates?: Estimates;
+  /** Stage-4 research attached to the card it belongs to. */
+  deep?: DeepInvestigation;
   verdict: "INVESTIGATE" | "WATCH" | "REJECT";
   verdictReason: string;
 };
