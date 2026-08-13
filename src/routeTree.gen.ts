@@ -16,6 +16,7 @@ import { Route as HunterIndexRouteImport } from './routes/hunter.index'
 import { Route as HunterManualRouteImport } from './routes/hunter.manual'
 import { Route as DemoAgency2RouteImport } from './routes/demo.agency2'
 import { Route as DemoAgencyRouteImport } from './routes/demo.agency'
+import { Route as ApiPublicVeritaSubscribeRouteImport } from './routes/api/public/verita-subscribe'
 
 const HunterRoute = HunterRouteImport.update({
   id: '/hunter',
@@ -52,6 +53,12 @@ const DemoAgencyRoute = DemoAgencyRouteImport.update({
   path: '/demo/agency',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicVeritaSubscribeRoute =
+  ApiPublicVeritaSubscribeRouteImport.update({
+    id: '/api/public/verita-subscribe',
+    path: '/api/public/verita-subscribe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/demo/agency2': typeof DemoAgency2Route
   '/hunter/manual': typeof HunterManualRoute
   '/hunter/': typeof HunterIndexRoute
+  '/api/public/verita-subscribe': typeof ApiPublicVeritaSubscribeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -69,6 +77,7 @@ export interface FileRoutesByTo {
   '/demo/agency2': typeof DemoAgency2Route
   '/hunter/manual': typeof HunterManualRoute
   '/hunter': typeof HunterIndexRoute
+  '/api/public/verita-subscribe': typeof ApiPublicVeritaSubscribeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -79,6 +88,7 @@ export interface FileRoutesById {
   '/demo/agency2': typeof DemoAgency2Route
   '/hunter/manual': typeof HunterManualRoute
   '/hunter/': typeof HunterIndexRoute
+  '/api/public/verita-subscribe': typeof ApiPublicVeritaSubscribeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -90,6 +100,7 @@ export interface FileRouteTypes {
     | '/demo/agency2'
     | '/hunter/manual'
     | '/hunter/'
+    | '/api/public/verita-subscribe'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -98,6 +109,7 @@ export interface FileRouteTypes {
     | '/demo/agency2'
     | '/hunter/manual'
     | '/hunter'
+    | '/api/public/verita-subscribe'
   id:
     | '__root__'
     | '/'
@@ -107,6 +119,7 @@ export interface FileRouteTypes {
     | '/demo/agency2'
     | '/hunter/manual'
     | '/hunter/'
+    | '/api/public/verita-subscribe'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -115,6 +128,7 @@ export interface RootRouteChildren {
   HunterRoute: typeof HunterRouteWithChildren
   DemoAgencyRoute: typeof DemoAgencyRoute
   DemoAgency2Route: typeof DemoAgency2Route
+  ApiPublicVeritaSubscribeRoute: typeof ApiPublicVeritaSubscribeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -168,6 +182,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoAgencyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/verita-subscribe': {
+      id: '/api/public/verita-subscribe'
+      path: '/api/public/verita-subscribe'
+      fullPath: '/api/public/verita-subscribe'
+      preLoaderRoute: typeof ApiPublicVeritaSubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -190,6 +211,7 @@ const rootRouteChildren: RootRouteChildren = {
   HunterRoute: HunterRouteWithChildren,
   DemoAgencyRoute: DemoAgencyRoute,
   DemoAgency2Route: DemoAgency2Route,
+  ApiPublicVeritaSubscribeRoute: ApiPublicVeritaSubscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
