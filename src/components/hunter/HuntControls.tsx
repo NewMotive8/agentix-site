@@ -4,7 +4,7 @@ import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Crosshair, Play, X, BookOpen } from "lucide-react";
+import { Crosshair, Play, Square, X, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CATEGORY_FAMILIES } from "@/lib/hunt/categories";
 import { coverageReady, MAX_CATEGORIES, type Coverage, type CoverageMode } from "@/lib/hunt/querymatrix";
