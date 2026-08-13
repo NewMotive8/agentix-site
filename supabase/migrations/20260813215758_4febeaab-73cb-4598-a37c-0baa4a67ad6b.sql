@@ -1,0 +1,1 @@
+DELETE FROM public.verita_subscribers WHERE email = 'test+auto@example.com';
