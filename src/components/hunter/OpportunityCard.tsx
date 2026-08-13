@@ -291,41 +291,82 @@ export function OpportunityCard({
         ? { cls: "border-signal-amber bg-signal-amber/15 text-signal-amber" }
         : { cls: "border-border bg-muted text-muted-foreground" };
 
+  const id = opp.identity;
+  const size = estimateOf(opp, "contract size");
+  const margin = estimateOf(opp, "margin");
+  const meta = [
+    id?.quantity && `Qty ${id.quantity}`,
+    opp.deadline && `Closes ${opp.deadline}`,
+    id && KIND_LABEL[id.itemKind],
+  ].filter(Boolean) as string[];
+
   return (
     <article className="rounded-lg border border-border bg-card p-6 shadow-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-5">
-        <div className="min-w-0">
-          <div className="text-[14px] text-muted-foreground">
-            Buyer: <span className="font-semibold text-foreground">{opp.agency}</span> ·{" "}
-            <span className="font-semibold text-signal-blue">{opp.sourceLabel}</span>
-            {opp.deadline && <> · Closes {opp.deadline}</>}
-          </div>
-          <h3 className="mt-1.5 text-[21px] font-bold leading-snug">{opp.product}</h3>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
-            <span
-              className={cn(
-                "rounded-md border px-2 py-0.5 font-bold",
-                opp.provenance.status === "LIVE"
-                  ? "border-primary/60 bg-primary/10 text-primary"
-                  : "border-signal-amber/60 bg-signal-amber/15 text-signal-amber",
-              )}
-            >
-              {opp.provenance.status === "LIVE" ? "LIVE" : "DEMO — SIMULATED"}
-            </span>
-            {opp.provenance.rawNoticeType && (
-              <span className="rounded-md border border-border bg-muted px-2 py-0.5 font-semibold text-muted-foreground">
-                Notice type: {opp.provenance.rawNoticeType}
-              </span>
-            )}
+        <div className="flex min-w-0 gap-4">
+          {id?.imageUrl ? (
             <a
-              href={opp.provenance.sourceUrl}
+              href={id.sourceUrl}
               target="_blank"
               rel="noreferrer"
-              className="font-semibold text-signal-blue underline underline-offset-2"
+              className="hidden shrink-0 sm:block"
+              title="Picture found on the notice page"
             >
-              Open original notice
+              <img
+                src={id.imageUrl}
+                alt={id.productName}
+                loading="lazy"
+                className="h-24 w-24 rounded-md border border-border object-contain bg-muted/40"
+              />
             </a>
-            <span className="text-muted-foreground">Found {opp.provenance.retrievedAt.slice(0, 10)}</span>
+          ) : id?.itemKind === "CATALOGUE" || id?.itemKind === "FEW" ? (
+            <div className="hidden h-24 w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border bg-muted/40 text-center text-[12px] text-muted-foreground sm:flex">
+              <Layers className="h-6 w-6" />
+              Many items
+            </div>
+          ) : null}
+
+          <div className="min-w-0">
+            <h3 className="text-[22px] font-bold leading-snug">{id?.productName || opp.product}</h3>
+            {id?.whatItIs && (
+              <p className="mt-1 text-[16px] leading-snug text-foreground">{id.whatItIs}</p>
+            )}
+            <div className="mt-1.5 text-[14px] text-muted-foreground">
+              <span className="font-semibold text-foreground">{opp.agency}</span> ·{" "}
+              <span className="font-semibold text-signal-blue">{opp.sourceLabel}</span>
+              {meta.length > 0 && <> · {meta.join(" · ")}</>}
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px]">
+              <span
+                className={cn(
+                  "rounded-md border px-2 py-0.5 font-bold",
+                  opp.provenance.status === "LIVE"
+                    ? "border-primary/60 bg-primary/10 text-primary"
+                    : "border-signal-amber/60 bg-signal-amber/15 text-signal-amber",
+                )}
+              >
+                {opp.provenance.status === "LIVE" ? "LIVE" : "DEMO — SIMULATED"}
+              </span>
+              <a
+                href={opp.provenance.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-signal-blue underline underline-offset-2"
+              >
+                Open original notice
+              </a>
+              {id?.itemListUrl && (
+                <a
+                  href={id.itemListUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-signal-blue underline underline-offset-2"
+                >
+                  See the item list
+                </a>
+              )}
+              {id?.note && <span className="text-muted-foreground">{id.note}</span>}
+            </div>
           </div>
         </div>
         {opp.analysisAvailable ? (
@@ -342,10 +383,29 @@ export function OpportunityCard({
           </div>
         </div>
         ) : sig ? (
-          <div className={cn("shrink-0 rounded-lg border-2 px-4 py-2 text-center", sigBand.cls)}>
-            <div className="data text-[30px] font-bold leading-none">{sig.score}</div>
-            <div className="text-[13px] font-semibold">Signal</div>
-            <div className="text-[14px] font-bold">{sig.verdict}</div>
+          <div className="flex shrink-0 items-start gap-3">
+            {(size || margin) && (
+              <div className="rounded-lg border-2 border-primary/60 bg-primary/10 px-4 py-2 text-right">
+                {size && (
+                  <>
+                    <div className="text-[12px] font-semibold text-muted-foreground">Deal size</div>
+                    <div className="data text-[19px] font-bold text-primary">{size.value}</div>
+                  </>
+                )}
+                {margin && (
+                  <>
+                    <div className="mt-1 text-[12px] font-semibold text-muted-foreground">Margin</div>
+                    <div className="data text-[19px] font-bold text-primary">{margin.value}</div>
+                  </>
+                )}
+                <div className="text-[11px] text-muted-foreground">estimate</div>
+              </div>
+            )}
+            <div className={cn("rounded-lg border-2 px-4 py-2 text-center", sigBand.cls)}>
+              <div className="data text-[30px] font-bold leading-none">{sig.score}</div>
+              <div className="text-[13px] font-semibold">Signal</div>
+              <div className="text-[14px] font-bold">{sig.verdict}</div>
+            </div>
           </div>
         ) : (
           <span />
