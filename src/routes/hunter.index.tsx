@@ -8,11 +8,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useHunterLight } from "@/lib/hunter-theme";
-import { defaultParams, type HuntParams } from "@/lib/hunter-data";
+import { defaultParams, SOURCE_LABELS, type HuntParams } from "@/lib/hunter-data";
 import { PIPELINE_STAGES, runPipeline } from "@/lib/hunt/pipeline";
+import { defaultCoverage, type Coverage } from "@/lib/hunt/querymatrix";
 import {
   defaultWorkingCapital,
   workingCapitalLabel,
+  type CategoryProgress,
   type HuntMode,
   type HuntRun,
   type Scored,
@@ -63,6 +65,8 @@ function HunterPage() {
   const { light, toggle } = useHunterLight();
   const [params, setParams] = useState<HuntParams>(defaultParams);
   const [workingCapital, setWorkingCapital] = useState<WorkingCapital>(defaultWorkingCapital);
+  const [coverage, setCoverage] = useState<Coverage>(defaultCoverage);
+  const [progress, setProgress] = useState<CategoryProgress[]>([]);
   const [mode, setMode] = useState<HuntMode>("live");
   const [run, setRun] = useState<HuntRun | null>(null);
   const [running, setRunning] = useState(true);
@@ -75,20 +79,23 @@ function HunterPage() {
   const start = (nextMode: HuntMode = mode) => {
     setRunning(true);
     setStage(0);
-    const finished = runPipeline({ params, workingCapital, mode: nextMode });
-    const step = async (i: number) => {
-      if (i >= PIPELINE_STAGES.length) {
-        const result = await finished;
-        setRun(result);
-        setRanAtLabel(new Date(result.ranAt).toLocaleString());
-        setDismissed([]);
-        setRunning(false);
-        return;
-      }
-      setStage(i);
-      window.setTimeout(() => void step(i + 1), 260);
-    };
-    void step(0);
+    setProgress([]);
+    void runPipeline({
+      params,
+      workingCapital,
+      coverage,
+      mode: nextMode,
+      onProgress: (p) => {
+        setProgress(p.categories);
+        setStage(p.stage);
+      },
+    }).then((result) => {
+      setRun(result);
+      setRanAtLabel(new Date(result.ranAt).toLocaleString());
+      setDismissed([]);
+      setStage(PIPELINE_STAGES.length - 1);
+      setRunning(false);
+    });
   };
 
   // Live mode is the default: run once on mount, in the browser only.
@@ -117,6 +124,8 @@ function HunterPage() {
           workingCapital={workingCapital}
           onWorkingCapitalChange={setWorkingCapital}
           onChange={setParams}
+          coverage={coverage}
+          onCoverageChange={setCoverage}
           onRun={() => start()}
           running={running}
           mode={mode}
@@ -138,11 +147,15 @@ function HunterPage() {
         <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
           <div>
             <h2 className="text-[20px] font-bold">
-              {run?.isDemo
-                ? "DEMO — SIMULATED DATA"
-                : run?.sourceStatuses.some((s) => s.state === "LIVE")
-                  ? "LIVE PROCUREMENT DATA"
-                  : "LIVE MODE — NO SOURCES CONNECTED"}
+              {!run
+                ? mode === "demo"
+                  ? "DEMO — SIMULATED DATA"
+                  : "LIVE MODE"
+                : run.isDemo
+                  ? "DEMO — SIMULATED DATA"
+                  : run.sourceStatuses.some((s) => s.state === "LIVE")
+                    ? "LIVE PROCUREMENT DATA"
+                    : "LIVE MODE — NO SOURCES REACHABLE"}
             </h2>
             <p className="text-[15px] text-muted-foreground">
               Procurement Watch · working-capital limit:{" "}
@@ -165,6 +178,55 @@ function HunterPage() {
         <div className="flex-1 overflow-y-auto p-6">
           {running || !run ? (
             <div className="mx-auto max-w-5xl space-y-6">
+              <div className="rounded-lg border-2 border-primary bg-primary/10 p-6">
+                <h3 className="data text-[22px] font-bold tracking-wide text-primary">
+                  {mode === "live" ? "LIVE HUNT" : "DEMO HUNT — SIMULATED"}
+                </h3>
+                <dl className="mt-3 grid gap-x-8 gap-y-1.5 text-[16px] sm:grid-cols-2">
+                  {[
+                    ["Universe", coverage.mode === "all" ? "All categories" : coverage.mode === "categories" ? `${coverage.categories.length || "all"} selected categories` : `${coverage.mode.toUpperCase()}: ${coverage.terms || "(none entered)"}`],
+                    ["Sources", (Object.keys(params.sources) as (keyof typeof params.sources)[]).filter((k) => params.sources[k]).map((k) => SOURCE_LABELS[k]).join(" · ")],
+                    ["Discovery", mode === "live" ? "Web (official procurement domains) + API where available" : "Simulated corpus"],
+                    ["Raw target", String(coverage.rawTarget)],
+                    ["Working-capital limit", workingCapitalLabel(workingCapital)],
+                    ["Deep investigations", String(coverage.deepInvestigations)],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex gap-2">
+                      <dt className="font-semibold text-muted-foreground">{k}:</dt>
+                      <dd className="data font-bold text-foreground">{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+
+              {progress.length > 0 && (
+                <div className="rounded-lg border border-border bg-card p-6">
+                  <h3 className="text-[18px] font-bold">Category coverage</h3>
+                  <ul className="mt-3 space-y-1">
+                    {progress.map((c) => (
+                      <li
+                        key={c.id}
+                        className={cn(
+                          "data flex items-baseline justify-between gap-4 rounded-md px-3 py-1.5 text-[16px]",
+                          c.state === "running"
+                            ? "bg-primary/20 font-bold text-primary"
+                            : c.state === "done"
+                              ? "text-foreground"
+                              : "text-muted-foreground",
+                        )}
+                      >
+                        <span>{c.label}</span>
+                        <span>
+                          {c.state === "pending"
+                            ? "queued"
+                            : `${c.queries} queries — ${c.hits} hits${c.state === "running" ? " …" : ""}`}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <div className="rounded-lg border border-border bg-card p-6">
                 <h3 className="text-[18px] font-bold">
                   {mode === "live" ? "Hunting live sources…" : "Replaying simulated corpus…"}
@@ -208,6 +270,18 @@ function HunterPage() {
                 title="Executive summary"
                 subtitle={`Run ${ranAtLabel} · ${run.queriesRun} queries · ${run.rawCandidates} raw candidates · ${run.afterDedupe} after de-duplication`}
               >
+                <div className="mb-4 rounded-md border border-primary/50 bg-primary/10 p-4 text-[15px]">
+                  <div className="data font-bold text-primary">
+                    {run.isDemo ? "DEMO HUNT — SIMULATED DATA" : "LIVE HUNT"}
+                  </div>
+                  <div className="mt-1 text-foreground">
+                    Universe: {run.coverageStatement.universe} · Sources: {run.coverageStatement.sources} ·
+                    Discovery: {run.coverageStatement.discovery} · Raw target:{" "}
+                    {run.coverageStatement.rawTarget} · Working-capital limit:{" "}
+                    {run.coverageStatement.workingCapital} · Deep investigations:{" "}
+                    {run.coverageStatement.deepInvestigations}
+                  </div>
+                </div>
                 <ul className="mb-4 space-y-1 text-[15px]">
                   {run.sourceStatuses.map((s) => (
                     <li
@@ -224,6 +298,85 @@ function HunterPage() {
                   ))}
                 </ul>
               </Section>
+
+              {run.categories.length > 0 && (
+                <Section
+                  title="Coverage audit"
+                  subtitle="Every category the engine searched, with the queries executed and hits returned."
+                >
+                  <ul className="space-y-1 text-[16px]">
+                    {run.categories.map((c) => (
+                      <li key={c.id} className="data flex justify-between gap-4">
+                        <span>{c.label}</span>
+                        <span className={c.hits > 0 ? "font-bold text-primary" : "text-muted-foreground"}>
+                          {c.queries} queries — {c.hits} hits
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
+
+              {run.deepInvestigations.length > 0 && (
+                <Section
+                  title="Deep investigations"
+                  subtitle="Stage 4 — official notice documents read, then supplier research on the open web. Supplier findings are commercial research, not government-confirmed."
+                >
+                  <div className="space-y-5">
+                    {run.deepInvestigations.map((d) => {
+                      const opp = [...run.qualified, ...run.capitalConstrained].find(
+                        (o) => o.id === d.opportunityId,
+                      );
+                      return (
+                        <div key={d.opportunityId} className="rounded-md border border-border p-4">
+                          <div className="text-[17px] font-bold">{opp?.product ?? d.opportunityId}</div>
+                          {d.summary.length > 0 && (
+                            <ul className="mt-2 space-y-1 text-[16px] text-foreground">
+                              {d.summary.map((s) => (
+                                <li key={s}>• {s}</li>
+                              ))}
+                            </ul>
+                          )}
+                          {d.complianceFlags.length > 0 && (
+                            <p className="mt-2 text-[15px] text-signal-amber">
+                              Compliance flags: {d.complianceFlags.join(" · ")}
+                            </p>
+                          )}
+                          {d.suppliers.length > 0 ? (
+                            <div className="mt-3 space-y-1.5">
+                              <div className="text-[13px] font-semibold uppercase tracking-wide text-signal-blue">
+                                Potential suppliers — public web research, not government-confirmed
+                              </div>
+                              {d.suppliers.map((s) => (
+                                <div key={`${s.name}-${s.sourceUrl}`} className="text-[15px]">
+                                  <span className="font-bold">{s.name}</span>{" "}
+                                  <span className="data rounded border border-border px-1.5 py-0.5 text-[13px] font-semibold text-muted-foreground">
+                                    {s.type}
+                                  </span>{" "}
+                                  · {s.country} ·{" "}
+                                  <a
+                                    href={s.sourceUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-signal-blue underline underline-offset-2"
+                                  >
+                                    source
+                                  </a>{" "}
+                                  <span className="text-muted-foreground">
+                                    retrieved {s.retrievedAt.slice(0, 10)} — {s.evidence}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="mt-2 text-[15px] text-muted-foreground">{d.note}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Section>
+              )}
 
               {run.top3.length > 0 && (
                 <Section title="Top 3 to investigate" subtitle="Best combination of attractiveness and executability.">

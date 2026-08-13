@@ -53,8 +53,52 @@ export type CashFlow = {
   notes: string[];
 };
 
+/** How a record was obtained. SIMULATED only ever appears in DEMO MODE. */
+export type DiscoveryMethod = "API" | "WEB" | "DOCUMENT" | "SIMULATED";
+
+export type FieldEvidence = {
+  field: string;
+  value: string;
+  sourceUrl: string;
+  retrievedAt: string;
+  quote: string;
+};
+
+export type SupplierType =
+  | "OEM"
+  | "AUTHORIZED DISTRIBUTOR"
+  | "APPROVED ALTERNATE"
+  | "MANUFACTURER"
+  | "DISTRIBUTOR"
+  | "SURPLUS / STOCKIST"
+  | "UNVERIFIED SUPPLIER";
+
+export type SupplierClaim = {
+  name: string;
+  type: SupplierType;
+  country: string;
+  sourceUrl: string;
+  retrievedAt: string;
+  evidence: string;
+  /** Always false unless the solicitation itself names the company. */
+  governmentConfirmed: boolean;
+};
+
+export type DeepInvestigation = {
+  opportunityId: string;
+  summary: string[];
+  requirements: string[];
+  complianceFlags: string[];
+  suppliers: SupplierClaim[];
+  documentUrls: string[];
+  evidence: FieldEvidence[];
+  ranAt: string;
+  note: string;
+};
+
 export type Provenance = {
   status: SourceStatus;
+  method?: DiscoveryMethod;
   sourceUrl: string;
   retrievedAt: string;
   evidenceIds: string[];
@@ -85,6 +129,9 @@ export type Scored = Opportunity & {
   capitalConstrained: boolean;
   /** False for live notices whose source publishes no cost/quantity/history data. */
   analysisAvailable: boolean;
+  categoryId?: string;
+  categoryLabel?: string;
+  fieldEvidence?: FieldEvidence[];
   verdict: "INVESTIGATE" | "WATCH" | "REJECT";
   verdictReason: string;
 };
@@ -101,6 +148,14 @@ export type ProcurementFamily = {
   members: Scored[];
   aggregateValue: number;
   buyers: string[];
+};
+
+export type CategoryProgress = {
+  id: string;
+  label: string;
+  queries: number;
+  hits: number;
+  state: "pending" | "running" | "done";
 };
 
 export type HuntRun = {
@@ -125,4 +180,14 @@ export type HuntRun = {
   sourceKeysUsed: SourceKey[];
   top3: Scored[];
   summary: string[];
+  categories: CategoryProgress[];
+  deepInvestigations: DeepInvestigation[];
+  coverageStatement: {
+    universe: string;
+    sources: string;
+    discovery: string;
+    rawTarget: number;
+    workingCapital: string;
+    deepInvestigations: number;
+  };
 };

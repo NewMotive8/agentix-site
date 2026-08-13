@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Crosshair, Play, X, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CATEGORY_FAMILIES } from "@/lib/hunt/categories";
+import type { Coverage, CoverageMode } from "@/lib/hunt/querymatrix";
 import {
   WORKING_CAPITAL_PRESETS,
   workingCapitalLabel,
@@ -26,6 +28,8 @@ interface Props {
   workingCapital: WorkingCapital;
   onWorkingCapitalChange: (wc: WorkingCapital) => void;
   onChange: (p: HuntParams) => void;
+  coverage: Coverage;
+  onCoverageChange: (c: Coverage) => void;
   onRun: () => void;
   running: boolean;
   mode: HuntMode;
@@ -49,7 +53,17 @@ const SOURCE_HINTS: Record<SourceKey, string> = {
   dibbs: "Defense Logistics Agency bids",
   nspa: "NATO Support & Procurement Agency",
   ncia: "NATO Communications & Information Agency",
+  nato: "NATO HQ, ACT and ACO procurement pages",
 };
+
+const COVERAGE_MODES: { key: CoverageMode; label: string; hint: string }[] = [
+  { key: "all", label: "All categories", hint: "Search the full category matrix" },
+  { key: "categories", label: "Selected categories", hint: "Deeper pass on the categories you pick" },
+  { key: "fsc", label: "Specific FSC / PSC", hint: "Enter classification codes" },
+  { key: "naics", label: "Specific NAICS", hint: "Enter NAICS codes" },
+  { key: "keywords", label: "Keywords", hint: "Enter your own search terms" },
+  { key: "nsn", label: "NSN / part number", hint: "Enter exact NSNs or part numbers" },
+];
 
 function Field({
   label,
@@ -79,6 +93,8 @@ export function HuntControls({
   workingCapital,
   onWorkingCapitalChange,
   onChange,
+  coverage,
+  onCoverageChange,
   onRun,
   running,
   mode,
@@ -91,6 +107,7 @@ export function HuntControls({
   const [advanced, setAdvanced] = useState(false);
 
   const patch = (p: Partial<HuntParams>) => onChange({ ...params, ...p });
+  const patchCoverage = (c: Partial<Coverage>) => onCoverageChange({ ...coverage, ...c });
 
   const addTag = (raw: string) => {
     const code = raw.trim();
@@ -195,6 +212,108 @@ export function HuntControls({
 
         <section className="space-y-6 border-t border-border pt-6">
           <h2 className="text-[17px] font-bold">Search settings</h2>
+
+          <Field
+            label="Category coverage"
+            hint="What the engine explores before any profit or capital filter is applied."
+          >
+            <div className="grid grid-cols-2 gap-2">
+              {COVERAGE_MODES.map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => patchCoverage({ mode: m.key })}
+                  title={m.hint}
+                  className={cn(
+                    "rounded-md border px-2.5 py-2 text-left text-[14px] font-semibold transition-colors",
+                    coverage.mode === m.key
+                      ? "border-primary bg-primary/20 text-primary"
+                      : "border-border text-foreground hover:border-primary/60 hover:bg-muted",
+                  )}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+
+            {coverage.mode === "categories" && (
+              <div className="mt-3 max-h-64 space-y-1.5 overflow-y-auto rounded-md border border-border p-3">
+                {CATEGORY_FAMILIES.map((c) => {
+                  const on = coverage.categories.includes(c.id);
+                  return (
+                    <label key={c.id} className="flex cursor-pointer items-start gap-2.5">
+                      <Checkbox
+                        checked={on}
+                        onCheckedChange={(v) =>
+                          patchCoverage({
+                            categories: v
+                              ? [...coverage.categories, c.id]
+                              : coverage.categories.filter((x) => x !== c.id),
+                          })
+                        }
+                        className="mt-0.5 size-5"
+                      />
+                      <span className="text-[14px] font-semibold text-foreground">{c.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            {["fsc", "naics", "keywords", "nsn"].includes(coverage.mode) && (
+              <Input
+                value={coverage.terms}
+                placeholder="Comma separated, e.g. 1650, 2530"
+                onChange={(e) => patchCoverage({ terms: e.target.value })}
+                className="mt-3 h-11 text-[15px]"
+              />
+            )}
+          </Field>
+
+          <Field
+            label="Coverage weight"
+            hint="How many searches each category receives. Higher means broader, slower hunts."
+            value={`${coverage.weight.toFixed(1)}x`}
+          >
+            <Slider
+              min={0.5}
+              max={2}
+              step={0.1}
+              value={[coverage.weight]}
+              onValueChange={([v]) => patchCoverage({ weight: v })}
+              className="py-2 [&_[data-slot=slider-thumb]]:size-6"
+            />
+          </Field>
+
+          <Field
+            label="Raw candidate target"
+            hint="Discovery keeps searching categories until it reaches this many raw candidates."
+            value={String(coverage.rawTarget)}
+          >
+            <Slider
+              min={20}
+              max={300}
+              step={10}
+              value={[coverage.rawTarget]}
+              onValueChange={([v]) => patchCoverage({ rawTarget: v })}
+              className="py-2 [&_[data-slot=slider-thumb]]:size-6"
+            />
+          </Field>
+
+          <Field
+            label="Deep investigations"
+            hint="How many of the strongest opportunities get documents read and suppliers researched."
+            value={String(coverage.deepInvestigations)}
+          >
+            <Slider
+              min={0}
+              max={25}
+              step={1}
+              value={[coverage.deepInvestigations]}
+              onValueChange={([v]) => patchCoverage({ deepInvestigations: v })}
+              className="py-2 [&_[data-slot=slider-thumb]]:size-6"
+            />
+          </Field>
 
           <Field
             label="Minimum margin"

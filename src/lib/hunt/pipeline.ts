@@ -7,28 +7,20 @@ import {
 } from "@/lib/hunter-data";
 import { noticeKind, scoreOpportunity } from "./score";
 import { estimateCashFlow } from "./cashflow";
-import { runLiveAdapter, toStatusReport } from "./sources/registry";
-import type { AdapterResult, LiveNotice, SourceStatusReport } from "./sources/types";
+import { CATEGORY_FAMILIES, categoriesFor } from "./categories";
+import { buildQueryPlan, type Coverage } from "./querymatrix";
+import { discoverCategoryFn, deepInvestigateFn } from "./hunt.functions";
+import type { LiveNotice, SourceStatusReport } from "./sources/types";
 import {
   workingCapitalLabel,
+  type CategoryProgress,
+  type DeepInvestigation,
   type HuntMode,
   type HuntRun,
   type ProcurementFamily,
   type Scored,
   type WorkingCapital,
 } from "./types";
-
-/** Strategy x terminology x FSC query matrix (demo mode only). */
-const PROCUREMENT_TERMS = ["solicitation", "RFQ", "RFP", "sources sought", "presolicitation"];
-const PRODUCT_TERMS = ["spare parts", "component", "assembly", "overhaul kit", "repair parts"];
-
-export function buildQueryMatrix(params: HuntParams): string[] {
-  const fsc = params.fscCodes.length > 0 ? params.fscCodes : ["*"];
-  const out: string[] = [];
-  for (const p of PROCUREMENT_TERMS)
-    for (const t of PRODUCT_TERMS) for (const f of fsc) out.push(`${p} "${t}" FSC:${f}`);
-  return out;
-}
 
 /** Simulated corpus reader — DEMO MODE ONLY. Never called from the live path. */
 export function simulatedCorpus(source: SourceKey): Opportunity[] {
@@ -45,14 +37,17 @@ function canonicalKey(o: Opportunity): string {
 function buildFamilies(items: Scored[]): ProcurementFamily[] {
   const groups = new Map<string, Scored[]>();
   for (const it of items) {
-    const key = it.investigation.platform.split(/[,(]/)[0].trim().toLowerCase();
+    const key = (it.categoryLabel ?? it.investigation.platform).split(/[,(]/)[0].trim().toLowerCase();
     groups.set(key, [...(groups.get(key) ?? []), it]);
   }
   const families: ProcurementFamily[] = [];
   for (const [key, members] of groups) {
     if (members.length < 2) continue;
     const id = `fam-${key.replace(/\s+/g, "-")}`;
-    const label = members[0].investigation.platform.split(/[,(]/)[0].trim().toUpperCase();
+    const label = (members[0].categoryLabel ?? members[0].investigation.platform)
+      .split(/[,(]/)[0]
+      .trim()
+      .toUpperCase();
     for (const m of members) {
       m.familyId = id;
       m.familyLabel = label;
@@ -65,18 +60,38 @@ function buildFamilies(items: Scored[]): ProcurementFamily[] {
       buyers: Array.from(new Set(members.map((m) => m.agency))),
     });
   }
-  return families.sort((a, b) => b.aggregateValue - a.aggregateValue);
+  return families.sort((a, b) => b.members.length - a.members.length);
 }
 
 export type RunInput = {
   params: HuntParams;
   workingCapital: WorkingCapital;
   mode: HuntMode;
+  coverage: Coverage;
   lookbackDays?: number;
+  onProgress?: (p: { categories: CategoryProgress[]; stage: number }) => void;
 };
 
 const money = (v: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(v);
+
+function coverageStatement(input: RunInput, sources: SourceKey[], discovery: string) {
+  const { coverage, workingCapital } = input;
+  const universe =
+    coverage.mode === "all"
+      ? "All categories"
+      : coverage.mode === "categories"
+        ? `${coverage.categories.length || CATEGORY_FAMILIES.length} selected categories`
+        : `${coverage.mode.toUpperCase()}: ${coverage.terms || "(none entered)"}`;
+  return {
+    universe,
+    sources: sources.map((k) => SOURCE_LABELS[k]).join(" · "),
+    discovery,
+    rawTarget: coverage.rawTarget,
+    workingCapital: workingCapitalLabel(workingCapital),
+    deepInvestigations: coverage.deepInvestigations,
+  };
+}
 
 function emptyRun(base: Partial<HuntRun>): HuntRun {
   return {
@@ -99,6 +114,16 @@ function emptyRun(base: Partial<HuntRun>): HuntRun {
     sourceKeysUsed: [],
     top3: [],
     summary: [],
+    categories: [],
+    deepInvestigations: [],
+    coverageStatement: {
+      universe: "All categories",
+      sources: "",
+      discovery: "Web + API where available",
+      rawTarget: 100,
+      workingCapital: "$0",
+      deepInvestigations: 10,
+    },
     ...base,
   };
 }
@@ -109,9 +134,10 @@ export async function runPipeline(input: RunInput): Promise<HuntRun> {
 
 /* ------------------------------------------------------------------ DEMO */
 
-function runDemo({ params, workingCapital }: RunInput): HuntRun {
-  const queries = buildQueryMatrix(params);
+function runDemo(input: RunInput): HuntRun {
+  const { params, workingCapital, coverage } = input;
   const sourceKeysUsed = (Object.keys(params.sources) as SourceKey[]).filter((k) => params.sources[k]);
+  const queries = buildQueryPlan(coverage, sourceKeysUsed);
 
   const raw: Opportunity[] = [];
   for (const key of sourceKeysUsed) raw.push(...simulatedCorpus(key));
@@ -124,7 +150,11 @@ function runDemo({ params, workingCapital }: RunInput): HuntRun {
     return true;
   });
 
-  const scored = deduped.map((o) => scoreOpportunity(o, workingCapital, true));
+  const scored = deduped.map((o) => {
+    const s = scoreOpportunity(o, workingCapital, true);
+    s.provenance.method = "SIMULATED";
+    return s;
+  });
   const { qualified, capitalConstrained, rejected } = applyConstraints(scored, params);
 
   const families = buildFamilies([...qualified, ...capitalConstrained]);
@@ -165,12 +195,13 @@ function runDemo({ params, workingCapital }: RunInput): HuntRun {
     sourceKeysUsed,
     top3: active.slice(0, 3),
     summary,
+    coverageStatement: coverageStatement(input, sourceKeysUsed, "SIMULATED — developer demo mode"),
   });
 }
 
 /* ------------------------------------------------------------------ LIVE */
 
-const OPEN_CLASSES = new Set(["SOLICITATION", "COMBINED_SYNOPSIS"]);
+const OPEN_CLASSES = new Set(["SOLICITATION", "COMBINED_SYNOPSIS", "UNCLASSIFIED"]);
 const SOUGHT_CLASSES = new Set(["SOURCES_SOUGHT", "PRESOLICITATION"]);
 const FUTURE_CLASSES = new Set(["SPECIAL_NOTICE", "INTENT_TO_BUNDLE"]);
 
@@ -181,6 +212,7 @@ function liveScored(n: LiveNotice): Scored {
     ...o,
     provenance: {
       status: "LIVE",
+      method: n.method,
       sourceUrl: n.sourceUrl,
       retrievedAt: n.retrievedAt,
       evidenceIds: [`${o.source}:${o.solicitation}`],
@@ -199,59 +231,148 @@ function liveScored(n: LiveNotice): Scored {
     familyLabel: null,
     capitalConstrained: false,
     analysisAvailable: false,
+    categoryId: n.categoryId,
+    categoryLabel: n.categoryLabel,
+    fieldEvidence: n.evidence,
     verdict: "WATCH",
     verdictReason:
-      "Live notice. Economics, quantities and supplier data are not published by this source, so no score is calculated — open the original notice to evaluate.",
+      "Live record. Quantities, prices and supplier data are not published at the discovery layer — run the deep investigation or open the original notice.",
   };
 }
 
-async function runLive({ params, workingCapital, lookbackDays = 90 }: RunInput): Promise<HuntRun> {
+async function runLive(input: RunInput): Promise<HuntRun> {
+  const { params, workingCapital, coverage, onProgress } = input;
   const sourceKeysUsed = (Object.keys(params.sources) as SourceKey[]).filter((k) => params.sources[k]);
+  const cats = coverage.mode === "categories" ? categoriesFor(coverage.categories) : categoriesFor([]);
 
-  const results: AdapterResult[] = await Promise.all(
-    sourceKeysUsed.map((k) =>
-      runLiveAdapter(k, { keywords: [], fscCodes: params.fscCodes, lookbackDays }),
-    ),
-  );
+  const progress: CategoryProgress[] = cats.map((c) => ({
+    id: c.id,
+    label: c.label,
+    queries: 0,
+    hits: 0,
+    state: "pending",
+  }));
+  const emit = (stage: number) => onProgress?.({ categories: progress.map((p) => ({ ...p })), stage });
+  emit(0);
 
-  const statuses: SourceStatusReport[] = results.map(toStatusReport);
-  const notices = results.flatMap((r) => r.notices);
-  const queriesRun = results.reduce((a, r) => a + r.queriesRun, 0);
+  const notices: LiveNotice[] = [];
+  let queriesRun = 0;
+  const errors: string[] = [];
+  const apiUsed = new Set<SourceKey>();
+  let webConfigured = true;
 
-  const seen = new Set<string>();
+  // Stage 1 — discover broadly, category by category, until the raw target is met.
+  for (let i = 0; i < cats.length; i++) {
+    const c = cats[i];
+    progress[i].state = "running";
+    emit(0);
+    try {
+      const res = await discoverCategoryFn({
+        data: { categoryId: c.id, sources: sourceKeysUsed, coverage },
+      });
+      queriesRun += res.queriesRun;
+      webConfigured = res.webConfigured;
+      for (const k of res.apiUsed) apiUsed.add(k);
+      for (const e of res.errors) if (errors.length < 5) errors.push(e);
+      notices.push(...res.notices);
+      progress[i].queries = res.queriesRun;
+      progress[i].hits = res.notices.length;
+    } catch (err) {
+      if (errors.length < 5) errors.push(err instanceof Error ? err.message : "discovery failed");
+    }
+    progress[i].state = "done";
+    emit(0);
+    if (notices.length >= coverage.rawTarget) {
+      for (let j = i + 1; j < cats.length; j++) progress[j].state = "done";
+      break;
+    }
+  }
+
+  // Stage 2 — normalise and de-duplicate.
+  emit(1);
+  const seenUrl = new Set<string>();
+  const seenKey = new Set<string>();
   const deduped = notices.filter((n) => {
     const k = canonicalKey(n.opportunity);
-    if (seen.has(k)) return false;
-    seen.add(k);
+    if (seenUrl.has(n.sourceUrl) || seenKey.has(k)) return false;
+    seenUrl.add(n.sourceUrl);
+    seenKey.add(k);
     return true;
   });
 
-  const scored = deduped.map((n) => liveScored(n));
-
-  const qualified = scored.filter((s) => OPEN_CLASSES.has(String(s.liveNoticeClass)) || s.liveNoticeClass === undefined);
-  const sourcesSought = scored.filter((s) => SOUGHT_CLASSES.has(String(s.liveNoticeClass)));
-  const futureSignals = scored.filter((s) => FUTURE_CLASSES.has(String(s.liveNoticeClass)));
+  // Stage 3 — classify and filter.
+  emit(2);
+  const scored = deduped.map(liveScored);
+  const cls = (s: Scored) => String(s.liveNoticeClass ?? "UNCLASSIFIED");
+  const qualified = scored.filter((s) => OPEN_CLASSES.has(cls(s)));
+  const sourcesSought = scored.filter((s) => SOUGHT_CLASSES.has(cls(s)));
+  const futureSignals = scored.filter((s) => FUTURE_CLASSES.has(cls(s)));
   const rejected = scored
-    .filter((s) => !qualified.includes(s) && !sourcesSought.includes(s) && !futureSignals.includes(s))
-    .map((opp) => ({
-      opp,
-      reason: `Notice type reported by source: ${opp.provenance.rawNoticeType ?? "unknown"}`,
-    }))
+    .filter((s) => !OPEN_CLASSES.has(cls(s)) && !SOUGHT_CLASSES.has(cls(s)) && !FUTURE_CLASSES.has(cls(s)))
+    .map((opp) => ({ opp, reason: `Notice type reported by source: ${opp.provenance.rawNoticeType ?? "unknown"}` }))
     .slice(0, 20);
 
-  const live = statuses.filter((s) => s.state === "LIVE");
-  const offline = statuses.filter((s) => s.state !== "LIVE");
+  const families = buildFamilies(qualified);
 
+  // Stage 4 — deep investigation of the strongest opportunities.
+  emit(3);
+  const deepInvestigations: DeepInvestigation[] = [];
+  const targets = qualified.slice(0, Math.max(0, coverage.deepInvestigations));
+  for (const t of targets) {
+    try {
+      const res = await deepInvestigateFn({
+        data: {
+          opportunityId: t.id,
+          title: t.product,
+          url: t.provenance.sourceUrl,
+          solicitation: t.solicitation,
+          sourceLabel: t.sourceLabel,
+        },
+      });
+      deepInvestigations.push(res);
+      if (res.summary.length > 0) t.aiSummary = res.summary.join(" ");
+      if (res.complianceFlags.length > 0) {
+        t.constraints = res.complianceFlags.map((label) => ({
+          label,
+          state: "watch" as const,
+          evidence: `Extracted from the official notice page (${t.provenance.sourceUrl}), retrieved ${res.ranAt.slice(0, 10)}.`,
+        }));
+      }
+    } catch {
+      /* an investigation failure never invents data */
+    }
+    emit(3);
+  }
+
+  // Stage 5 — report.
+  emit(4);
+  const statuses: SourceStatusReport[] = sourceKeysUsed.map((k) => {
+    const count = deduped.filter((n) => n.opportunity.source === k).length;
+    const method = apiUsed.has(k) ? "API + WEB" : "WEB";
+    return {
+      key: k,
+      label: SOURCE_LABELS[k],
+      state: !webConfigured && !apiUsed.has(k) ? "NOT_CONFIGURED" : count > 0 ? "LIVE" : "ERROR",
+      detail: !webConfigured
+        ? "LIVE ACCESS NOT CONFIGURED — web research connector unavailable"
+        : count > 0
+          ? `LIVE — ${method} discovery, ${count} records`
+          : "Connected, but no records matched this run's queries",
+      count,
+    };
+  });
+
+  const catsSearched = progress.filter((p) => p.queries > 0);
   const summary = [
-    live.length > 0
-      ? `Live retrieval from ${live.map((s) => s.label).join(", ")} — ${notices.length} notices returned across ${queriesRun} API calls.`
-      : "No source returned live data for this hunt.",
-    offline.length > 0
-      ? `Not searched: ${offline.map((s) => `${s.label} (${s.detail})`).join(" · ")}`
-      : "All selected sources are connected.",
-    `${qualified.length} open solicitations · ${sourcesSought.length} sources sought / presolicitations · ${futureSignals.length} special notices.`,
-    "Notice types come from each record's own type field. Quantities, NSNs, prices and supplier data are not published by these APIs and are shown as NOT AVAILABLE rather than estimated.",
-    `Working-capital limit for this hunt: ${workingCapitalLabel(workingCapital)}.`,
+    `Coverage: ${catsSearched.length} categories searched · ${queriesRun} queries executed · ${notices.length} raw candidates · ${deduped.length} after de-duplication.`,
+    catsSearched.length > 0
+      ? `Per category — ${catsSearched.map((p) => `${p.label}: ${p.queries} queries, ${p.hits} hits`).join(" · ")}.`
+      : "No category returned any candidate.",
+    `Discovery method: ${apiUsed.size > 0 ? "structured API where credentials exist, public official web pages elsewhere" : "public official web pages (no procurement API credentials configured)"}. Simulated records are never used in LIVE MODE.`,
+    `${qualified.length} open/unclassified notices · ${sourcesSought.length} sources sought or presolicitation · ${futureSignals.length} future signals.`,
+    `${deepInvestigations.length} deep investigations completed; ${deepInvestigations.reduce((a, d) => a + d.suppliers.length, 0)} supplier candidates identified from public commercial sources (not government-confirmed).`,
+    `Working-capital limit for this hunt: ${workingCapitalLabel(workingCapital)} — applied after discovery, never before it.`,
+    errors.length > 0 ? `Retrieval issues: ${errors.join(" · ")}` : "No retrieval errors.",
   ];
 
   return emptyRun({
@@ -268,12 +389,19 @@ async function runLive({ params, workingCapital, lookbackDays = 90 }: RunInput):
     qualified,
     capitalConstrained: [],
     rejected,
-    families: [],
+    families,
     sourcesSought,
     futureSignals,
     sourceKeysUsed,
-    top3: [],
+    top3: qualified.slice(0, 3),
     summary,
+    categories: progress,
+    deepInvestigations,
+    coverageStatement: coverageStatement(
+      input,
+      sourceKeysUsed,
+      apiUsed.size > 0 ? "Web + API where available" : "Web (official procurement domains)",
+    ),
   });
 }
 
@@ -319,11 +447,9 @@ function applyConstraints(scored: Scored[], params: HuntParams) {
 }
 
 export const PIPELINE_STAGES = [
-  { key: "search", label: "Searching sources", detail: "Querying each connected source" },
-  { key: "dedupe", label: "Normalising & de-duplicating", detail: "Canonical key per notice" },
-  { key: "classify", label: "Classifying notices", detail: "From each record's own type field" },
-  { key: "enrich", label: "Enriching historical demand", detail: "Prior awards, quantities, unit prices" },
-  { key: "cash", label: "Applying the cash-flow gate", detail: "Payment timing, deposits, MOQ, lead time" },
-  { key: "score", label: "Scoring", detail: "Opportunity Score and Commercial Execution Score" },
-  { key: "report", label: "Generating Procurement Watch", detail: "Ranking and writing the report" },
+  { key: "discover", label: "1 · Discovering broadly", detail: "Category x source x terminology query matrix" },
+  { key: "normalize", label: "2 · Collecting & normalising", detail: "Provenance, de-duplication, canonical keys" },
+  { key: "analyze", label: "3 · Analysing & filtering", detail: "Notice classification and strategy filters" },
+  { key: "deep", label: "4 · Deep investigation", detail: "Notice documents, requirements, supplier research" },
+  { key: "report", label: "5 · Procurement Watch", detail: "U.S. / NATO report with auditable coverage" },
 ];
