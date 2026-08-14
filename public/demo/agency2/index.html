@@ -104,9 +104,9 @@
         video.addEventListener('canplay', function () { clearTimeout(guard); });
         video.addEventListener('canplaythrough', function () { clearTimeout(guard); });
 
-        guard = setTimeout(function () { if (video.readyState < 3) finish(); }, 2500);
+        guard = setTimeout(function () { if (video.readyState < 3) showCta(); }, 2500);
         var p = video.play();
-        if (p && typeof p.catch === 'function') { p.catch(function () { finish(); }); }
+        if (p && typeof p.catch === 'function') { p.catch(showCta); }
       })();
     </script>
   </body>
