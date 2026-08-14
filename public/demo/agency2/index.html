@@ -16,7 +16,7 @@
     <style>
       #verita-sting{position:fixed;inset:0;z-index:9999;background:#000;transition:opacity 700ms ease;
         will-change:opacity;transform:translateZ(0);backface-visibility:hidden}
-      #verita-sting video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#000;
+      #verita-sting video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;background:#000;
         transform:translateZ(0)}
       #verita-sting.is-leaving{opacity:0;pointer-events:none}
       #verita-sting-skip{position:absolute;right:20px;bottom:20px;min-height:44px;padding:0 14px;cursor:pointer;
@@ -24,8 +24,8 @@
         text-transform:uppercase;letter-spacing:.18em;transition:color .25s ease}
       #verita-sting-skip:hover{color:#e8c976}
       #verita-sting-skip:focus-visible{outline:1px solid #e8c976;outline-offset:4px;color:#e8c976}
-      #verita-sting-cta{position:absolute;left:0;right:0;bottom:8%;display:flex;gap:18px;justify-content:center;
-        opacity:0;pointer-events:none;transition:opacity 500ms ease}
+      #verita-sting-cta{position:absolute;left:0;right:0;bottom:max(18px,env(safe-area-inset-bottom));display:flex;gap:18px;
+        justify-content:center;opacity:0;pointer-events:none;transition:opacity 500ms ease}
       #verita-sting-cta.is-on{opacity:1;pointer-events:auto}
       #verita-sting-cta button{min-width:150px;min-height:46px;padding:0 26px;cursor:pointer;background:transparent;
         border:1px solid rgba(201,162,74,.55);color:#e8c976;font-family:'Inter',system-ui,sans-serif;font-size:12px;
