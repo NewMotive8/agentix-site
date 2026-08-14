@@ -24,6 +24,14 @@
         text-transform:uppercase;letter-spacing:.18em;transition:color .25s ease}
       #verita-sting-skip:hover{color:#e8c976}
       #verita-sting-skip:focus-visible{outline:1px solid #e8c976;outline-offset:4px;color:#e8c976}
+      #verita-sting-cta{position:absolute;left:0;right:0;bottom:8%;display:flex;gap:18px;justify-content:center;
+        opacity:0;pointer-events:none;transition:opacity 500ms ease}
+      #verita-sting-cta.is-on{opacity:1;pointer-events:auto}
+      #verita-sting-cta button{min-width:150px;min-height:46px;padding:0 26px;cursor:pointer;background:transparent;
+        border:1px solid rgba(201,162,74,.55);color:#e8c976;font-family:'Inter',system-ui,sans-serif;font-size:12px;
+        text-transform:uppercase;letter-spacing:.24em;transition:background .25s ease,border-color .25s ease,color .25s ease}
+      #verita-sting-cta button:hover{background:rgba(201,162,74,.12);border-color:#e8c976}
+      #verita-sting-cta button:focus-visible{outline:1px solid #e8c976;outline-offset:4px}
     </style>
   </head>
   <body>
