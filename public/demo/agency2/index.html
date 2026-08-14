@@ -24,6 +24,14 @@
         text-transform:uppercase;letter-spacing:.18em;transition:color .25s ease}
       #verita-sting-skip:hover{color:#e8c976}
       #verita-sting-skip:focus-visible{outline:1px solid #e8c976;outline-offset:4px;color:#e8c976}
+      #verita-sting-cta{position:absolute;left:0;right:0;bottom:8%;display:flex;gap:18px;justify-content:center;
+        opacity:0;pointer-events:none;transition:opacity 500ms ease}
+      #verita-sting-cta.is-on{opacity:1;pointer-events:auto}
+      #verita-sting-cta button{min-width:150px;min-height:46px;padding:0 26px;cursor:pointer;background:transparent;
+        border:1px solid rgba(201,162,74,.55);color:#e8c976;font-family:'Inter',system-ui,sans-serif;font-size:12px;
+        text-transform:uppercase;letter-spacing:.24em;transition:background .25s ease,border-color .25s ease,color .25s ease}
+      #verita-sting-cta button:hover{background:rgba(201,162,74,.12);border-color:#e8c976}
+      #verita-sting-cta button:focus-visible{outline:1px solid #e8c976;outline-offset:4px}
     </style>
   </head>
   <body>
@@ -45,11 +53,18 @@
           '<source src="' + base + 'verita-sting.mp4" type="video/mp4">' +
           '<source src="' + base + 'verita-sting.webm" type="video/webm">' +
           '</video>' +
-          '<button id="verita-sting-skip" type="button">Skip</button>';
+          '<button id="verita-sting-skip" type="button">Skip</button>' +
+          '<div id="verita-sting-cta">' +
+          '<button id="verita-sting-enter" type="button">Enter</button>' +
+          '<button id="verita-sting-play" type="button">Play</button>' +
+          '</div>';
         document.body.appendChild(wrap);
 
         var video = wrap.querySelector('video');
         var skipBtn = wrap.querySelector('#verita-sting-skip');
+        var cta = wrap.querySelector('#verita-sting-cta');
+        var enterBtn = wrap.querySelector('#verita-sting-enter');
+        var playBtn = wrap.querySelector('#verita-sting-play');
         var lastFocus = document.activeElement;
         var prevOverflow = document.documentElement.style.overflow;
         document.documentElement.style.overflow = 'hidden';
@@ -73,16 +88,25 @@
           if (e.key === 'Escape') finish();
         }
 
+        function showCta() { cta.classList.add('is-on'); try { enterBtn.focus(); } catch (e) {} }
+
         document.addEventListener('keydown', onKey);
         skipBtn.addEventListener('click', finish);
-        video.addEventListener('ended', finish);
-        video.addEventListener('error', finish);
+        enterBtn.addEventListener('click', finish);
+        playBtn.addEventListener('click', function () {
+          cta.classList.remove('is-on');
+          try { video.currentTime = 0; } catch (e) {}
+          var pr = video.play();
+          if (pr && typeof pr.catch === 'function') { pr.catch(showCta); }
+        });
+        video.addEventListener('ended', showCta);
+        video.addEventListener('error', showCta);
         video.addEventListener('canplay', function () { clearTimeout(guard); });
         video.addEventListener('canplaythrough', function () { clearTimeout(guard); });
 
-        guard = setTimeout(function () { if (video.readyState < 3) finish(); }, 2500);
+        guard = setTimeout(function () { if (video.readyState < 3) showCta(); }, 2500);
         var p = video.play();
-        if (p && typeof p.catch === 'function') { p.catch(function () { finish(); }); }
+        if (p && typeof p.catch === 'function') { p.catch(showCta); }
       })();
     </script>
   </body>
