@@ -56,3 +56,14 @@ autoplay, on a video error, or if `canplay` has not fired within 2.5s.
   `ffmpeg -i master.webm -c:v libvpx-vp9 -crf 30 -b:v 0 -row-mt 1 -cpu-used 2 -an verita-sting.webm`
 - Header wordmark uses DM Serif Display for "VERITA" and Inter 300 / 0.3em
   tracking for "IGAMING CONSULTANCY" to match the master logo artwork.
+
+## Aug 2026 — smoothness + typography pass
+
+- The original master was ~51fps with irregular 33-42ms frame gaps (visible judder).
+  Assets are now retimed to true CFR 60 with motion-compensated interpolation:
+  `ffmpeg -i master.webm -vf "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:vsbmc=1,format=yuv420p" -r 60 -fps_mode cfr -c:v libx264 -profile:v high -crf 18 -preset medium -tune film -movflags +faststart -an verita-sting.mp4`
+  then VP9: `ffmpeg -i verita-sting.mp4 -c:v libvpx-vp9 -crf 28 -b:v 0 -row-mt 1 -cpu-used 2 -an verita-sting.webm`
+  Measured in Chrome: 418 total frames, ~0 dropped.
+- Header lockup uses Jost 300 (Montserrat/Inter fallback) to match the poster
+  lettering; "IGAMING CONSULTANCY" is gold (#c9a24a) at 0.34em tracking.
+- `--muted-foreground` lifted #6e6b63 -> #a5a096; inline dim greys #8d8a84 -> #b0aba1.
