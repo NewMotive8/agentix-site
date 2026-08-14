@@ -18,16 +18,15 @@
       #v-intro.v-hide{opacity:0;pointer-events:none}
       #v-intro video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
       #v-intro .v-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,14,20,.35) 0%,rgba(12,14,20,.15) 45%,rgba(12,14,20,.9) 100%)}
-      #v-intro .v-inner{position:relative;display:flex;flex-direction:column;align-items:center;gap:28px;padding:32px;text-align:center}
-      #v-intro img.v-mark{width:96px;height:auto;opacity:.95}
-      #v-intro .v-word{font-family:Inter,system-ui,sans-serif;font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:#6e6b63}
+      #v-intro .v-inner{position:absolute;left:0;right:0;bottom:9vh;display:flex;flex-direction:column;align-items:center;gap:22px;padding:0 32px;text-align:center}
+      #v-intro .v-word{font-family:Inter,system-ui,sans-serif;font-size:10px;letter-spacing:.42em;text-transform:uppercase;color:#6e6b63}
       #v-intro .v-cta{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
       #v-intro button{font-family:Inter,system-ui,sans-serif;font-size:11px;letter-spacing:.3em;text-transform:uppercase;padding:14px 34px;border:1px solid rgba(200,164,74,.55);background:transparent;color:#c8a44a;cursor:pointer;transition:background .25s ease,color .25s ease,border-color .25s ease}
       #v-intro button:hover{background:#c8a44a;color:#0c0e14;border-color:#c8a44a}
       #v-intro button.v-secondary{border-color:rgba(230,226,216,.25);color:#e6e2d8}
       #v-intro button.v-secondary:hover{background:rgba(230,226,216,.12);color:#e6e2d8;border-color:rgba(230,226,216,.5)}
       html.v-locked,html.v-locked body{overflow:hidden}
-      @media (max-width:640px){#v-intro .v-cta{flex-direction:column;width:100%;max-width:280px}#v-intro button{width:100%}#v-intro img.v-mark{width:72px}}
+      @media (max-width:640px){#v-intro .v-cta{flex-direction:column;width:100%;max-width:280px}#v-intro button{width:100%}}
     </style>
   </head>
   <body>
@@ -41,7 +40,6 @@
       </video>
       <div class="v-scrim"></div>
       <div class="v-inner">
-        <img class="v-mark" src="/__l5e/assets-v1/69d4c76f-3b94-4cba-96b1-fec956755aca/verita-mark.png" alt="Verita">
         <div class="v-word">Verita — iGaming Consultancy</div>
         <div class="v-cta">
           <button type="button" id="v-enter">Enter</button>
