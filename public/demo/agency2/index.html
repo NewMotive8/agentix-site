@@ -27,7 +27,7 @@
         letter-spacing:.28em;transition:color .25s ease,border-color .25s ease,background .25s ease}
       #verita-sting-enter{border:1px solid #c9a24a;color:#e8c976}
       #verita-sting-enter:hover{background:rgba(201,162,74,.12);color:#f4dfa6}
-      #verita-sting-play{border:1px solid rgba(232,201,118,.28);color:#8d8a84}
+      #verita-sting-play{border:1px solid rgba(232,201,118,.28);color:#b0aba1}
       #verita-sting-play:hover{border-color:#c9a24a;color:#e8c976}
       #verita-sting button:focus-visible{outline:1px solid #e8c976;outline-offset:4px;color:#e8c976}
       @media (max-width:520px){#verita-sting-ui{flex-direction:column;align-items:stretch;padding-bottom:36px}}
@@ -111,6 +111,7 @@
         playBtn.addEventListener('click', play);
         video.addEventListener('ended', showUI);
         video.addEventListener('playing', showUI);
+        video.addEventListener('canplaythrough', function () { clearTimeout(guard); });
         video.addEventListener('error', showUI);
         video.addEventListener('canplay', function () { clearTimeout(guard); });
 
