@@ -38,11 +38,8 @@
     <div id="root"></div>
     <script>
       (function () {
-        var FORCE = /[?&]intro=1(&|$)/.test(location.search);
         var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var entered = false;
-        try { entered = sessionStorage.getItem('verita-intro-entered') === '1'; } catch (e) {}
-        if (entered && !FORCE) return;
+        // Intro plays on every page load (no session gating).
 
         var base = '/demo/agency2/assets/';
         var wrap = document.createElement('div');
@@ -85,7 +82,7 @@
           if (done) return;
           done = true;
           clearTimeout(guard);
-          try { sessionStorage.setItem('verita-intro-entered', '1'); } catch (e) {}
+          try { sessionStorage.removeItem('verita-intro-entered'); } catch (e) {}
           document.removeEventListener('keydown', onKey);
           document.documentElement.style.overflow = prevOverflow;
           try { video.pause(); } catch (e) {}
