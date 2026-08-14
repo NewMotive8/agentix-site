@@ -34,36 +34,35 @@ Markup, styles and the vanilla controller are in `index.html`. Sources:
 - `assets/verita-sting-poster.png` (final frame; poster + held end state)
 
 To swap the clip, replace those three files in place (same names) — nothing is bundled
-or optimised. Keep the MP4 under 3 MB; re-encode at a lower bitrate rather than trimming.
+or optimised. The current master is `verita-sting-1920x1080-3.webm`.
 
-Behaviour: autoplays muted once per session (`sessionStorage` key `verita-sting-seen`),
-`?intro=1` forces it for QA, `Skip` / `Esc` dismiss it, and it cross-fades to the hero on
-`ended`. It is skipped entirely under `prefers-reduced-motion: reduce`, on blocked
-autoplay, on a video error, or if `canplay` has not fired within 2.5s.
-
-## Intro gate (Aug 2026)
-
+Behaviour (current):
 - The site root opens on a full-screen intro (`#verita-sting` in `index.html`).
-  The 7s clip autoplays muted/inline; when it ends it holds on the last frame.
-- Two CTAs: **ENTER** (fades the intro out over 700ms, sets
-  `sessionStorage['verita-intro-entered']`, never shown again that session) and
-  **PLAY** (restarts the clip from 0). `Esc` = ENTER. `?intro=1` forces the intro.
-- Buttons fade in as soon as playback starts, on video error, or after a 2.5s
-  readiness guard, so a blocked/slow video never traps the visitor. With
-  `prefers-reduced-motion` the poster frame is shown with the same buttons.
-- Assets re-encoded from the master at higher quality for smoothness:
-  `ffmpeg -i master.webm -c:v libx264 -profile:v high -pix_fmt yuv420p -crf 20 -preset slow -tune film -movflags +faststart -an verita-sting.mp4`
-  `ffmpeg -i master.webm -c:v libvpx-vp9 -crf 30 -b:v 0 -row-mt 1 -cpu-used 2 -an verita-sting.webm`
-- Header wordmark uses DM Serif Display for "VERITA" and Inter 300 / 0.3em
-  tracking for "IGAMING CONSULTANCY" to match the master logo artwork.
+- The clip autoplays muted/inline on every refresh.
+- When playback ends it holds on the last frame and reveals two CTAs:
+  **ENTER** (fades the intro out over 700 ms) and **PLAY** (restarts the clip from 0).
+- `Esc` and the bottom-right **Skip** button both dismiss the intro immediately.
+- Fallbacks: if autoplay is blocked, the video errors, or `canplay`/`canplaythrough`
+  has not fired within 2.5 s, the CTAs appear anyway so the visitor is never trapped.
+- Skipped entirely under `prefers-reduced-motion: reduce`.
 
-## Aug 2026 — smoothness + typography pass
+## Encoding notes
 
-- The original master was ~51fps with irregular 33-42ms frame gaps (visible judder).
-  Assets are now retimed to true CFR 60 with motion-compensated interpolation:
-  `ffmpeg -i master.webm -vf "minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:vsbmc=1,format=yuv420p" -r 60 -fps_mode cfr -c:v libx264 -profile:v high -crf 18 -preset medium -tune film -movflags +faststart -an verita-sting.mp4`
-  then VP9: `ffmpeg -i verita-sting.mp4 -c:v libvpx-vp9 -crf 28 -b:v 0 -row-mt 1 -cpu-used 2 -an verita-sting.webm`
-  Measured in Chrome: 418 total frames, ~0 dropped.
-- Header lockup uses Jost 300 (Montserrat/Inter fallback) to match the poster
-  lettering; "IGAMING CONSULTANCY" is gold (#c9a24a) at 0.34em tracking.
-- `--muted-foreground` lifted #6e6b63 -> #a5a096; inline dim greys #8d8a84 -> #b0aba1.
+Current assets were produced from the uploaded master `verita-sting-1920x1080-3.webm`
+(VP9, 1920×1080, ~59.94 fps) with these commands:
+
+```bash
+# MP4 fallback (H.264, High L4.2, yuv420p, CFR 59.94)
+ffmpeg -i master.webm -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.2 \
+  -crf 18 -preset slow -r 60000/1001 -movflags +faststart -an verita-sting.mp4
+
+# WebM (VP9, CFR 59.94)
+ffmpeg -i master.webm -c:v libvpx-vp9 -pix_fmt yuv420p -crf 24 \
+  -b:v 8M -minrate 4M -maxrate 12M -r 60000/1001 -an verita-sting.webm
+
+# Poster (final frame)
+ffmpeg -sseof -0.5 -i verita-sting.mp4 -q:v 2 -frames:v 1 verita-sting-poster.png
+```
+
+Result: MP4 ~1.3 MB, WebM ~960 KB, poster ~280 KB. The mostly-black content compresses
+very efficiently while retaining the 60 fps motion.
