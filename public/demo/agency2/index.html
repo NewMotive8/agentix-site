@@ -19,18 +19,11 @@
       #verita-sting video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#000;
         transform:translateZ(0)}
       #verita-sting.is-leaving{opacity:0;pointer-events:none}
-      #verita-sting-ui{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:16px;
-        padding:0 24px 52px;opacity:0;transition:opacity 600ms ease}
-      #verita-sting.is-ready #verita-sting-ui{opacity:1}
-      #verita-sting button{min-height:46px;padding:0 34px;cursor:pointer;background:transparent;
-        font-family:'Inter',system-ui,sans-serif;font-size:11px;font-weight:400;text-transform:uppercase;
-        letter-spacing:.28em;transition:color .25s ease,border-color .25s ease,background .25s ease}
-      #verita-sting-enter{border:1px solid #c9a24a;color:#e8c976}
-      #verita-sting-enter:hover{background:rgba(201,162,74,.12);color:#f4dfa6}
-      #verita-sting-play{border:1px solid rgba(232,201,118,.28);color:#b0aba1}
-      #verita-sting-play:hover{border-color:#c9a24a;color:#e8c976}
-      #verita-sting button:focus-visible{outline:1px solid #e8c976;outline-offset:4px;color:#e8c976}
-      @media (max-width:520px){#verita-sting-ui{flex-direction:column;align-items:stretch;padding-bottom:36px}}
+      #verita-sting-skip{position:absolute;right:20px;bottom:20px;min-height:44px;padding:0 14px;cursor:pointer;
+        background:transparent;border:0;color:#8d8a84;font-family:'Inter',system-ui,sans-serif;font-size:12px;
+        text-transform:uppercase;letter-spacing:.18em;transition:color .25s ease}
+      #verita-sting-skip:hover{color:#e8c976}
+      #verita-sting-skip:focus-visible{outline:1px solid #e8c976;outline-offset:4px;color:#e8c976}
     </style>
   </head>
   <body>
@@ -39,7 +32,10 @@
     <script>
       (function () {
         var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        // Intro plays on every page load (no session gating).
+        var force = /[?&]intro=1(&|$)/.test(location.search);
+        var seen = false;
+        try { seen = sessionStorage.getItem('verita-intro-seen') === '1'; } catch (e) {}
+        if (reduced || (seen && !force)) return;
 
         var base = '/demo/agency2/assets/';
         var wrap = document.createElement('div');
@@ -47,73 +43,50 @@
         wrap.setAttribute('role', 'dialog');
         wrap.setAttribute('aria-label', 'Verita intro');
         wrap.innerHTML =
-          '<video muted playsinline preload="auto" disablePictureInPicture ' +
+          '<video muted playsinline autoplay preload="auto" disablePictureInPicture ' +
           'poster="' + base + 'verita-sting-poster.png">' +
           '<source src="' + base + 'verita-sting.mp4" type="video/mp4">' +
           '<source src="' + base + 'verita-sting.webm" type="video/webm">' +
           '</video>' +
-          '<div id="verita-sting-ui">' +
-          '<button id="verita-sting-enter" type="button">Enter</button>' +
-          '<button id="verita-sting-play" type="button">Play</button>' +
-          '</div>';
+          '<button id="verita-sting-skip" type="button">Skip</button>';
         document.body.appendChild(wrap);
 
         var video = wrap.querySelector('video');
-        var enterBtn = wrap.querySelector('#verita-sting-enter');
-        var playBtn = wrap.querySelector('#verita-sting-play');
+        var skipBtn = wrap.querySelector('#verita-sting-skip');
         var lastFocus = document.activeElement;
         var prevOverflow = document.documentElement.style.overflow;
         document.documentElement.style.overflow = 'hidden';
         var done = false;
         var guard = null;
 
-        function showUI() { wrap.classList.add('is-ready'); }
-
-        function play() {
-          if (reduced) { showUI(); return; }
-          try { video.currentTime = 0; } catch (e) {}
-          clearTimeout(guard);
-          guard = setTimeout(function () { if (video.readyState < 3) showUI(); }, 2500);
-          var p = video.play();
-          if (p && typeof p.catch === 'function') { p.catch(function () { showUI(); }); }
-        }
-
-        function enter() {
+        function finish() {
           if (done) return;
           done = true;
           clearTimeout(guard);
-          try { sessionStorage.removeItem('verita-intro-entered'); } catch (e) {}
+          try { sessionStorage.setItem('verita-intro-seen', '1'); } catch (e) {}
           document.removeEventListener('keydown', onKey);
           document.documentElement.style.overflow = prevOverflow;
-          try { video.pause(); } catch (e) {}
           wrap.classList.add('is-leaving');
           setTimeout(function () {
             wrap.remove();
             if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} }
-          }, 750);
+          }, 800);
         }
 
         function onKey(e) {
-          if (e.key === 'Escape') { enter(); return; }
-          if (e.key === 'Tab') {
-            var els = [enterBtn, playBtn];
-            var i = els.indexOf(document.activeElement);
-            e.preventDefault();
-            els[(i + (e.shiftKey ? els.length - 1 : 1) + els.length) % els.length].focus();
-          }
+          if (e.key === 'Escape') finish();
         }
 
         document.addEventListener('keydown', onKey);
-        enterBtn.addEventListener('click', enter);
-        playBtn.addEventListener('click', play);
-        video.addEventListener('ended', showUI);
-        video.addEventListener('playing', showUI);
-        video.addEventListener('canplaythrough', function () { clearTimeout(guard); });
-        video.addEventListener('error', showUI);
+        skipBtn.addEventListener('click', finish);
+        video.addEventListener('ended', finish);
+        video.addEventListener('error', finish);
         video.addEventListener('canplay', function () { clearTimeout(guard); });
+        video.addEventListener('canplaythrough', function () { clearTimeout(guard); });
 
-        setTimeout(function () { try { enterBtn.focus({ preventScroll: true }); } catch (e) {} }, 60);
-        play();
+        guard = setTimeout(function () { if (video.readyState < 3) finish(); }, 2500);
+        var p = video.play();
+        if (p && typeof p.catch === 'function') { p.catch(function () { finish(); }); }
       })();
     </script>
   </body>
