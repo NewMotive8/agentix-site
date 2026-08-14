@@ -53,11 +53,18 @@
           '<source src="' + base + 'verita-sting.mp4" type="video/mp4">' +
           '<source src="' + base + 'verita-sting.webm" type="video/webm">' +
           '</video>' +
-          '<button id="verita-sting-skip" type="button">Skip</button>';
+          '<button id="verita-sting-skip" type="button">Skip</button>' +
+          '<div id="verita-sting-cta">' +
+          '<button id="verita-sting-enter" type="button">Enter</button>' +
+          '<button id="verita-sting-play" type="button">Play</button>' +
+          '</div>';
         document.body.appendChild(wrap);
 
         var video = wrap.querySelector('video');
         var skipBtn = wrap.querySelector('#verita-sting-skip');
+        var cta = wrap.querySelector('#verita-sting-cta');
+        var enterBtn = wrap.querySelector('#verita-sting-enter');
+        var playBtn = wrap.querySelector('#verita-sting-play');
         var lastFocus = document.activeElement;
         var prevOverflow = document.documentElement.style.overflow;
         document.documentElement.style.overflow = 'hidden';
@@ -81,10 +88,19 @@
           if (e.key === 'Escape') finish();
         }
 
+        function showCta() { cta.classList.add('is-on'); try { enterBtn.focus(); } catch (e) {} }
+
         document.addEventListener('keydown', onKey);
         skipBtn.addEventListener('click', finish);
-        video.addEventListener('ended', finish);
-        video.addEventListener('error', finish);
+        enterBtn.addEventListener('click', finish);
+        playBtn.addEventListener('click', function () {
+          cta.classList.remove('is-on');
+          try { video.currentTime = 0; } catch (e) {}
+          var pr = video.play();
+          if (pr && typeof pr.catch === 'function') { pr.catch(showCta); }
+        });
+        video.addEventListener('ended', showCta);
+        video.addEventListener('error', showCta);
         video.addEventListener('canplay', function () { clearTimeout(guard); });
         video.addEventListener('canplaythrough', function () { clearTimeout(guard); });
 
