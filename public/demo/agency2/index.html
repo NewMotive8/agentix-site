@@ -13,63 +13,10 @@
     <link rel="icon" type="image/png" href="/demo/agency2/favicon.png">
     <script type="module" crossorigin src="/demo/agency2/assets/index-DJU1rbE0.js"></script>
     <link rel="stylesheet" crossorigin href="/demo/agency2/assets/index-Bie2yWpX.css">
-    <style>
-      #v-intro{position:fixed;inset:0;z-index:9999;background:#0c0e14;display:flex;align-items:center;justify-content:center;opacity:1;transition:opacity .6s ease}
-      #v-intro.v-hide{opacity:0;pointer-events:none}
-      #v-intro video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-      #v-intro .v-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,14,20,.35) 0%,rgba(12,14,20,.15) 45%,rgba(12,14,20,.9) 100%)}
-      #v-intro .v-inner{position:absolute;left:0;right:0;bottom:9vh;display:flex;flex-direction:column;align-items:center;gap:22px;padding:0 32px;text-align:center}
-      #v-intro .v-word{font-family:Inter,system-ui,sans-serif;font-size:10px;letter-spacing:.42em;text-transform:uppercase;color:#9c988e}
-      #v-intro .v-cta{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
-      #v-intro button{font-family:Inter,system-ui,sans-serif;font-size:11px;letter-spacing:.3em;text-transform:uppercase;padding:14px 34px;border:1px solid rgba(200,164,74,.55);background:transparent;color:#c8a44a;cursor:pointer;transition:background .25s ease,color .25s ease,border-color .25s ease}
-      #v-intro button:hover{background:#c8a44a;color:#0c0e14;border-color:#c8a44a}
-      #v-intro button.v-secondary{border-color:rgba(230,226,216,.25);color:#e6e2d8}
-      #v-intro button.v-secondary:hover{background:rgba(230,226,216,.12);color:#e6e2d8;border-color:rgba(230,226,216,.5)}
-      html.v-locked,html.v-locked body{overflow:hidden}
-      @media (max-width:640px){#v-intro .v-cta{flex-direction:column;width:100%;max-width:280px}#v-intro button{width:100%}}
-    </style>
   </head>
   <body>
     
     <div id="root"></div>
-
-    <div id="v-intro" role="dialog" aria-label="Verita intro">
-      <video id="v-intro-video" autoplay muted playsinline preload="auto">
-        <source src="/__l5e/assets-v1/238bf216-817f-4df5-ae4d-630a3e48bd36/verita-sting.mp4" type="video/mp4">
-        <source src="/__l5e/assets-v1/50e1b5e3-454e-4490-8613-b124499d0745/verita-sting.webm" type="video/webm">
-      </video>
-      <div class="v-scrim"></div>
-      <div class="v-inner">
-        <div class="v-word">Verita — iGaming Consultancy</div>
-        <div class="v-cta">
-          <button type="button" id="v-enter">Enter</button>
-          <button type="button" class="v-secondary" id="v-play">Play</button>
-        </div>
-      </div>
-    </div>
-    <script>
-      (function () {
-        var intro = document.getElementById('v-intro');
-        var video = document.getElementById('v-intro-video');
-        var root = document.documentElement;
-        root.classList.add('v-locked');
-        function tryPlay() { var p = video && video.play(); if (p && p.catch) p.catch(function () {}); }
-        tryPlay();
-        document.getElementById('v-play').addEventListener('click', function () {
-          if (!video) return;
-          video.muted = false;
-          try { video.currentTime = 0; } catch (e) {}
-          tryPlay();
-        });
-        document.getElementById('v-enter').addEventListener('click', function () {
-          intro.classList.add('v-hide');
-          root.classList.remove('v-locked');
-          setTimeout(function () {
-            if (video) { video.pause(); }
-            intro.parentNode && intro.parentNode.removeChild(intro);
-          }, 650);
-        });
-      })();
-    </script>
+    
   </body>
 </html>
