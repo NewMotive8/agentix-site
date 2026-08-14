@@ -40,3 +40,19 @@ Behaviour: autoplays muted once per session (`sessionStorage` key `verita-sting-
 `?intro=1` forces it for QA, `Skip` / `Esc` dismiss it, and it cross-fades to the hero on
 `ended`. It is skipped entirely under `prefers-reduced-motion: reduce`, on blocked
 autoplay, on a video error, or if `canplay` has not fired within 2.5s.
+
+## Intro gate (Aug 2026)
+
+- The site root opens on a full-screen intro (`#verita-sting` in `index.html`).
+  The 7s clip autoplays muted/inline; when it ends it holds on the last frame.
+- Two CTAs: **ENTER** (fades the intro out over 700ms, sets
+  `sessionStorage['verita-intro-entered']`, never shown again that session) and
+  **PLAY** (restarts the clip from 0). `Esc` = ENTER. `?intro=1` forces the intro.
+- Buttons fade in as soon as playback starts, on video error, or after a 2.5s
+  readiness guard, so a blocked/slow video never traps the visitor. With
+  `prefers-reduced-motion` the poster frame is shown with the same buttons.
+- Assets re-encoded from the master at higher quality for smoothness:
+  `ffmpeg -i master.webm -c:v libx264 -profile:v high -pix_fmt yuv420p -crf 20 -preset slow -tune film -movflags +faststart -an verita-sting.mp4`
+  `ffmpeg -i master.webm -c:v libvpx-vp9 -crf 30 -b:v 0 -row-mt 1 -cpu-used 2 -an verita-sting.webm`
+- Header wordmark uses DM Serif Display for "VERITA" and Inter 300 / 0.3em
+  tracking for "IGAMING CONSULTANCY" to match the master logo artwork.

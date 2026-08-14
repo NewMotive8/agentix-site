@@ -14,16 +14,23 @@
     <script type="module" crossorigin src="/demo/agency2/assets/index-DJU1rbE0.js"></script>
     <link rel="stylesheet" crossorigin href="/demo/agency2/assets/index-Bie2yWpX.css">
     <style>
-      #verita-sting{position:fixed;inset:0;z-index:9999;background:#000;transition:opacity 700ms ease}
-      #verita-sting video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
-      #verita-sting.is-leaving{opacity:0}
-      #verita-sting-skip{position:absolute;right:24px;bottom:20px;display:inline-flex;align-items:center;
-        min-height:44px;padding:0 12px;background:none;border:0;cursor:pointer;
-        font-family:'Inter',system-ui,sans-serif;font-size:12px;text-transform:uppercase;
-        letter-spacing:.18em;color:#8d8a84;transition:color .2s ease}
-      #verita-sting-skip:hover{color:#e8c976}
-      #verita-sting-skip:focus-visible{outline:1px solid #e8c976;outline-offset:4px;color:#e8c976}
-      @media (prefers-reduced-motion: reduce){#verita-sting{display:none}}
+      #verita-sting{position:fixed;inset:0;z-index:9999;background:#000;transition:opacity 700ms ease;
+        will-change:opacity;transform:translateZ(0);backface-visibility:hidden}
+      #verita-sting video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#000;
+        transform:translateZ(0)}
+      #verita-sting.is-leaving{opacity:0;pointer-events:none}
+      #verita-sting-ui{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:16px;
+        padding:0 24px 52px;opacity:0;transition:opacity 600ms ease}
+      #verita-sting.is-ready #verita-sting-ui{opacity:1}
+      #verita-sting button{min-height:46px;padding:0 34px;cursor:pointer;background:transparent;
+        font-family:'Inter',system-ui,sans-serif;font-size:11px;font-weight:400;text-transform:uppercase;
+        letter-spacing:.28em;transition:color .25s ease,border-color .25s ease,background .25s ease}
+      #verita-sting-enter{border:1px solid #c9a24a;color:#e8c976}
+      #verita-sting-enter:hover{background:rgba(201,162,74,.12);color:#f4dfa6}
+      #verita-sting-play{border:1px solid rgba(232,201,118,.28);color:#8d8a84}
+      #verita-sting-play:hover{border-color:#c9a24a;color:#e8c976}
+      #verita-sting button:focus-visible{outline:1px solid #e8c976;outline-offset:4px;color:#e8c976}
+      @media (max-width:520px){#verita-sting-ui{flex-direction:column;align-items:stretch;padding-bottom:36px}}
     </style>
   </head>
   <body>
@@ -33,50 +40,82 @@
       (function () {
         var FORCE = /[?&]intro=1(&|$)/.test(location.search);
         var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var seen = false;
-        try { seen = sessionStorage.getItem('verita-sting-seen') === '1'; } catch (e) {}
-        if (reduced || (seen && !FORCE)) return;
-        try { sessionStorage.setItem('verita-sting-seen', '1'); } catch (e) {}
+        var entered = false;
+        try { entered = sessionStorage.getItem('verita-intro-entered') === '1'; } catch (e) {}
+        if (entered && !FORCE) return;
 
         var base = '/demo/agency2/assets/';
         var wrap = document.createElement('div');
         wrap.id = 'verita-sting';
+        wrap.setAttribute('role', 'dialog');
+        wrap.setAttribute('aria-label', 'Verita intro');
         wrap.innerHTML =
-          '<video muted playsinline autoplay preload="auto" disablePictureInPicture ' +
+          '<video muted playsinline preload="auto" disablePictureInPicture ' +
           'poster="' + base + 'verita-sting-poster.png">' +
           '<source src="' + base + 'verita-sting.mp4" type="video/mp4">' +
           '<source src="' + base + 'verita-sting.webm" type="video/webm">' +
           '</video>' +
-          '<button id="verita-sting-skip" type="button">Skip</button>';
+          '<div id="verita-sting-ui">' +
+          '<button id="verita-sting-enter" type="button">Enter</button>' +
+          '<button id="verita-sting-play" type="button">Play</button>' +
+          '</div>';
         document.body.appendChild(wrap);
 
         var video = wrap.querySelector('video');
+        var enterBtn = wrap.querySelector('#verita-sting-enter');
+        var playBtn = wrap.querySelector('#verita-sting-play');
+        var lastFocus = document.activeElement;
         var prevOverflow = document.documentElement.style.overflow;
         document.documentElement.style.overflow = 'hidden';
         var done = false;
+        var guard = null;
 
-        function end(fade) {
+        function showUI() { wrap.classList.add('is-ready'); }
+
+        function play() {
+          if (reduced) { showUI(); return; }
+          try { video.currentTime = 0; } catch (e) {}
+          clearTimeout(guard);
+          guard = setTimeout(function () { if (video.readyState < 3) showUI(); }, 2500);
+          var p = video.play();
+          if (p && typeof p.catch === 'function') { p.catch(function () { showUI(); }); }
+        }
+
+        function enter() {
           if (done) return;
           done = true;
           clearTimeout(guard);
+          try { sessionStorage.setItem('verita-intro-entered', '1'); } catch (e) {}
           document.removeEventListener('keydown', onKey);
           document.documentElement.style.overflow = prevOverflow;
-          if (!fade) { wrap.remove(); return; }
+          try { video.pause(); } catch (e) {}
           wrap.classList.add('is-leaving');
-          setTimeout(function () { wrap.remove(); }, 750);
+          setTimeout(function () {
+            wrap.remove();
+            if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) {} }
+          }, 750);
         }
 
-        function onKey(e) { if (e.key === 'Escape') end(true); }
-        document.addEventListener('keydown', onKey);
-        wrap.querySelector('#verita-sting-skip').addEventListener('click', function () { end(true); });
-        video.addEventListener('ended', function () { end(true); });
-        video.addEventListener('error', function () { end(false); });
+        function onKey(e) {
+          if (e.key === 'Escape') { enter(); return; }
+          if (e.key === 'Tab') {
+            var els = [enterBtn, playBtn];
+            var i = els.indexOf(document.activeElement);
+            e.preventDefault();
+            els[(i + (e.shiftKey ? els.length - 1 : 1) + els.length) % els.length].focus();
+          }
+        }
 
-        var guard = setTimeout(function () { if (video.readyState < 3) end(false); }, 2500);
+        document.addEventListener('keydown', onKey);
+        enterBtn.addEventListener('click', enter);
+        playBtn.addEventListener('click', play);
+        video.addEventListener('ended', showUI);
+        video.addEventListener('playing', showUI);
+        video.addEventListener('error', showUI);
         video.addEventListener('canplay', function () { clearTimeout(guard); });
 
-        var p = video.play();
-        if (p && typeof p.catch === 'function') { p.catch(function () { end(false); }); }
+        setTimeout(function () { try { enterBtn.focus({ preventScroll: true }); } catch (e) {} }, 60);
+        play();
       })();
     </script>
   </body>
