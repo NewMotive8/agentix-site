@@ -60,7 +60,6 @@
           if (done) return;
           done = true;
           clearTimeout(guard);
-          try { sessionStorage.setItem('verita-intro-seen', '1'); } catch (e) {}
           document.removeEventListener('keydown', onKey);
           document.documentElement.style.overflow = prevOverflow;
           wrap.classList.add('is-leaving');
