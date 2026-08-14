@@ -32,10 +32,7 @@
     <script>
       (function () {
         var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        var force = /[?&]intro=1(&|$)/.test(location.search);
-        var seen = false;
-        try { seen = sessionStorage.getItem('verita-intro-seen') === '1'; } catch (e) {}
-        if (reduced || (seen && !force)) return;
+        if (reduced) return;
 
         var base = '/demo/agency2/assets/';
         var wrap = document.createElement('div');
