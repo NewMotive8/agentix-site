@@ -304,12 +304,6 @@ function Index() {
               style={{ height: "120px" }}
             />
             <div
-              className="mt-4 font-mono-tech text-xs leading-relaxed"
-              style={{ color: slate }}
-            >
-              Defence · Cyber · Security
-            </div>
-            <div
               className="mt-2 font-mono-tech text-xs leading-relaxed"
               style={{ color: slate }}
             >
