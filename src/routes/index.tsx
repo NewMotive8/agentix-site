@@ -54,16 +54,6 @@ function Index() {
             />
           </div>
           <div
-            className="hidden sm:flex items-center gap-2 font-mono-tech text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 rounded-sm"
-            style={{ color: slate, border: `1px solid ${smoke}` }}
-          >
-            <span
-              className="pulse-dot inline-block w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: accent }}
-            />
-            <span>DEFENCE · CYBER · SECURITY</span>
-          </div>
-          <div
             className="sm:hidden flex items-center gap-2 font-mono-tech text-[10px]"
             style={{ color: slate }}
           >
