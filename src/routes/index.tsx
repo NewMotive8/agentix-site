@@ -324,7 +324,7 @@ function Index() {
               className="font-mono-tech text-[11px] uppercase tracking-[0.25em]"
               style={{ color: slate }}
             >
-              07 // Operating Principle
+              06 // Operating Principle
             </div>
           </div>
           <div className="md:col-span-7 md:col-start-6">
@@ -347,14 +347,14 @@ function Index() {
         </div>
       </section>
 
-      {/* 08 — FINAL CTA */}
+      {/* 07 — FINAL CTA */}
       <section style={{ borderBottom: `1px solid ${smoke}` }}>
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] text-center">
           <div
             className="font-mono-tech text-[11px] uppercase tracking-[0.25em] mb-10"
             style={{ color: slate }}
           >
-            08 // Enquiry
+            07 // Enquiry
           </div>
           <h2
             className="font-semibold tracking-[-0.02em] leading-[1.1] mx-auto"
