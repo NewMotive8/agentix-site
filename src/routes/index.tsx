@@ -51,7 +51,7 @@ function Index() {
               width={1600}
               height={568}
               className="w-auto"
-              style={{ height: "54px" }}
+              style={{ height: "81px" }}
             />
           </div>
           <div
@@ -301,7 +301,7 @@ function Index() {
               height={568}
               loading="lazy"
               className="w-auto max-w-full object-contain object-left"
-              style={{ height: "120px" }}
+              style={{ height: "180px" }}
             />
             <div
               className="mt-2 font-mono-tech text-xs leading-relaxed"
