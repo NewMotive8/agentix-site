@@ -268,7 +268,7 @@ function Index() {
       <section style={{ borderBottom: `1px solid ${smoke}` }}>
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-24 md:py-32 text-center">
           <a
-            href="mailto:nfoi@agentix-tech.net"
+            href="mailto:info@agentix-tech.net"
             className="inline-flex items-center gap-3 font-mono-tech text-sm uppercase tracking-[0.2em] px-8 py-4 rounded-sm transition-colors duration-200"
             style={{
               color: off,
@@ -318,11 +318,11 @@ function Index() {
               Inquiries & Collaborations
             </div>
             <a
-              href="mailto:nfoi@agentix-tech.net"
+              href="mailto:info@agentix-tech.net"
               className="mt-4 inline-block font-mono-tech text-sm underline underline-offset-4 decoration-1"
               style={{ color: off, textDecorationColor: smoke }}
             >
-              nfoi@agentix-tech.net
+              info@agentix-tech.net
             </a>
           </div>
         </div>
