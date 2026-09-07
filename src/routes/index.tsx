@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import ninjaAsset from "@/assets/nomad5_final.png.asset.json";
-import lockupAsset from "@/assets/agentix-lockup-black-mark.png.asset.json";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -46,8 +46,8 @@ function Index() {
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 flex items-center justify-between h-16">
           <div className="flex items-center">
             <img
-              src={lockupAsset.url}
-              alt="Agentix — Cyber, Security, Defence"
+              src="/agentix-lockup.png"
+              alt="Agentix"
               width={1600}
               height={568}
               className="w-auto"
@@ -295,8 +295,8 @@ function Index() {
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-20 grid grid-cols-1 md:grid-cols-2 gap-12">
           <div>
             <img
-              src={lockupAsset.url}
-              alt="Agentix — Cyber, Security, Defence"
+              src="/agentix-lockup.png"
+              alt="Agentix"
               width={1600}
               height={568}
               loading="lazy"
