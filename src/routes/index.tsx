@@ -278,28 +278,10 @@ function Index() {
 
       {/* 05 — FINAL CTA */}
       <section style={{ borderBottom: `1px solid ${smoke}` }}>
-        <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] text-center">
-          <div
-            className="font-mono-tech text-[11px] uppercase tracking-[0.25em] mb-10"
-            style={{ color: slate }}
-          >
-            05 // Enquiry
-          </div>
-          <h2
-            className="font-semibold tracking-[-0.02em] leading-[1.1] mx-auto"
-            style={{ color: off, fontSize: "clamp(2rem, 4vw, 3.25rem)", maxWidth: "900px" }}
-          >
-            A requirement. A capability. A conversation.
-          </h2>
-          <p
-            className="mt-8 text-base md:text-lg leading-relaxed mx-auto"
-            style={{ color: slate, maxWidth: "640px" }}
-          >
-            For defence organisations, government-facing programmes, technology companies and specialised suppliers.
-          </p>
+        <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-24 md:py-32 text-center">
           <a
             href="mailto:nfoi@agentix-tech.net"
-            className="mt-12 inline-flex items-center gap-3 font-mono-tech text-sm uppercase tracking-[0.2em] px-8 py-4 rounded-sm transition-colors duration-200"
+            className="inline-flex items-center gap-3 font-mono-tech text-sm uppercase tracking-[0.2em] px-8 py-4 rounded-sm transition-colors duration-200"
             style={{
               color: off,
               border: `1px solid ${smoke}`,
