@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import ninjaAsset from "@/assets/nomad5_final.png.asset.json";
-import markAsset from "@/assets/agentix-mark.png.asset.json";
+import lockupAsset from "@/assets/agentix-lockup-horizontal-white.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -44,17 +44,14 @@ function Index() {
         }}
       >
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center">
             <img
-              src={markAsset.url}
-              alt="Agentix logo"
-              width={465}
-              height={522}
-              className="h-8 w-auto"
+              src={lockupAsset.url}
+              alt="Agentix — Cyber, Security, Defence"
+              width={1600}
+              height={568}
+              className="h-9 w-auto"
             />
-            <span className="text-sm font-semibold tracking-[0.3em]" style={{ color: off }}>
-              AGENTIX
-            </span>
           </div>
           <div
             className="hidden sm:flex items-center gap-2 font-mono-tech text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 rounded-sm"
@@ -307,19 +304,13 @@ function Index() {
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-20 grid grid-cols-1 md:grid-cols-2 gap-12">
           <div>
             <img
-              src={markAsset.url}
-              alt="Agentix"
-              width={465}
-              height={522}
+              src={lockupAsset.url}
+              alt="Agentix — Cyber, Security, Defence"
+              width={1600}
+              height={568}
               loading="lazy"
-              className="h-16 w-auto"
+              className="h-20 w-auto max-w-full object-contain object-left"
             />
-            <div
-              className="mt-4 font-mono-tech font-bold text-sm tracking-[0.15em]"
-              style={{ color: off }}
-            >
-              AGENTIX LTD
-            </div>
             <div
               className="mt-4 font-mono-tech text-xs leading-relaxed"
               style={{ color: slate }}
