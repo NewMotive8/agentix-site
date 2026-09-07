@@ -242,7 +242,7 @@ function Index() {
               className="font-mono-tech text-[11px] uppercase tracking-[0.25em]"
               style={{ color: slate }}
             >
-              05 // Procurement
+              04 // Procurement
             </div>
           </div>
           <div className="md:col-span-7 md:col-start-6">
@@ -276,7 +276,7 @@ function Index() {
         </div>
       </section>
 
-      {/* 06 — OPERATING PRINCIPLE */}
+      {/* 05 — OPERATING PRINCIPLE */}
       <section style={{ borderBottom: `1px solid ${smoke}` }}>
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] grid grid-cols-1 md:grid-cols-12 gap-12">
           <div className="md:col-span-4">
@@ -284,7 +284,7 @@ function Index() {
               className="font-mono-tech text-[11px] uppercase tracking-[0.25em]"
               style={{ color: slate }}
             >
-              06 // Operating Principle
+              05 // Operating Principle
             </div>
           </div>
           <div className="md:col-span-7 md:col-start-6">
@@ -307,14 +307,14 @@ function Index() {
         </div>
       </section>
 
-      {/* 07 — FINAL CTA */}
+      {/* 06 — FINAL CTA */}
       <section style={{ borderBottom: `1px solid ${smoke}` }}>
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] text-center">
           <div
             className="font-mono-tech text-[11px] uppercase tracking-[0.25em] mb-10"
             style={{ color: slate }}
           >
-            07 // Enquiry
+            06 // Enquiry
           </div>
           <h2
             className="font-semibold tracking-[-0.02em] leading-[1.1] mx-auto"
