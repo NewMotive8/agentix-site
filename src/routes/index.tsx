@@ -50,7 +50,8 @@ function Index() {
               alt="Agentix — Cyber, Security, Defence"
               width={1600}
               height={568}
-              className="h-9 w-auto"
+              className="w-auto"
+              style={{ height: "54px" }}
             />
           </div>
           <div
@@ -299,7 +300,8 @@ function Index() {
               width={1600}
               height={568}
               loading="lazy"
-              className="h-20 w-auto max-w-full object-contain object-left"
+              className="w-auto max-w-full object-contain object-left"
+              style={{ height: "120px" }}
             />
             <div
               className="mt-4 font-mono-tech text-xs leading-relaxed"
