@@ -316,7 +316,7 @@ function Index() {
         </div>
       </section>
 
-      {/* 06 — NETWORK */}
+      {/* 06 — OPERATING PRINCIPLE */}
       <section style={{ borderBottom: `1px solid ${smoke}` }}>
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] grid grid-cols-1 md:grid-cols-12 gap-12">
           <div className="md:col-span-4">
@@ -324,38 +324,7 @@ function Index() {
               className="font-mono-tech text-[11px] uppercase tracking-[0.25em]"
               style={{ color: slate }}
             >
-              06 // Network
-            </div>
-          </div>
-          <div className="md:col-span-7 md:col-start-6">
-            <h2
-              className="font-semibold tracking-[-0.02em] leading-[1.1]"
-              style={{ color: off, fontSize: "clamp(2rem, 4vw, 3.25rem)" }}
-            >
-              The right capability is rarely in one place.
-            </h2>
-            <div
-              className="mt-10 space-y-6 text-base md:text-lg leading-relaxed"
-              style={{ color: slate }}
-            >
-              <p>
-                Agentix brings together selected manufacturers, OEMs, software companies, cybersecurity specialists and technology partners across multiple markets.
-              </p>
-              <p>Our role is to find the right combination.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 07 — OPERATING PRINCIPLE */}
-      <section style={{ borderBottom: `1px solid ${smoke}` }}>
-        <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] grid grid-cols-1 md:grid-cols-12 gap-12">
-          <div className="md:col-span-4">
-            <div
-              className="font-mono-tech text-[11px] uppercase tracking-[0.25em]"
-              style={{ color: slate }}
-            >
-              07 // Operating Principle
+              06 // Operating Principle
             </div>
           </div>
           <div className="md:col-span-7 md:col-start-6">
@@ -378,14 +347,14 @@ function Index() {
         </div>
       </section>
 
-      {/* 08 — FINAL CTA */}
+      {/* 07 — FINAL CTA */}
       <section style={{ borderBottom: `1px solid ${smoke}` }}>
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] text-center">
           <div
             className="font-mono-tech text-[11px] uppercase tracking-[0.25em] mb-10"
             style={{ color: slate }}
           >
-            08 // Enquiry
+            07 // Enquiry
           </div>
           <h2
             className="font-semibold tracking-[-0.02em] leading-[1.1] mx-auto"
