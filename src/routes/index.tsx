@@ -283,7 +283,7 @@ function Index() {
             className="font-mono-tech text-[11px] uppercase tracking-[0.25em] mb-10"
             style={{ color: slate }}
           >
-            06 // Enquiry
+            05 // Enquiry
           </div>
           <h2
             className="font-semibold tracking-[-0.02em] leading-[1.1] mx-auto"
