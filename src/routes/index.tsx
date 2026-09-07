@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import ninjaAsset from "@/assets/nomad5_final.png.asset.json";
-import lockupAsset from "@/assets/agentix-lockup-horizontal-white.png.asset.json";
+import lockupAsset from "@/assets/agentix-lockup-black-mark.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
