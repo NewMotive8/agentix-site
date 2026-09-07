@@ -276,45 +276,14 @@ function Index() {
         </div>
       </section>
 
-      {/* 05 — OPERATING PRINCIPLE */}
-      <section style={{ borderBottom: `1px solid ${smoke}` }}>
-        <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] grid grid-cols-1 md:grid-cols-12 gap-12">
-          <div className="md:col-span-4">
-            <div
-              className="font-mono-tech text-[11px] uppercase tracking-[0.25em]"
-              style={{ color: slate }}
-            >
-              05 // Operating Principle
-            </div>
-          </div>
-          <div className="md:col-span-7 md:col-start-6">
-            <h2
-              className="font-semibold tracking-[-0.02em] leading-[1.1]"
-              style={{ color: off, fontSize: "clamp(2rem, 4vw, 3.25rem)" }}
-            >
-              Selective by design.
-            </h2>
-            <div
-              className="mt-10 space-y-6 text-base md:text-lg leading-relaxed"
-              style={{ color: slate }}
-            >
-              <p>We don't publish every programme, partner or capability.</p>
-              <p>
-                Agentix works selectively on defence, cyber, security and technology opportunities where specialised knowledge and international relationships can make the difference.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 06 — FINAL CTA */}
+      {/* 05 — FINAL CTA */}
       <section style={{ borderBottom: `1px solid ${smoke}` }}>
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] text-center">
           <div
             className="font-mono-tech text-[11px] uppercase tracking-[0.25em] mb-10"
             style={{ color: slate }}
           >
-            06 // Enquiry
+            05 // Enquiry
           </div>
           <h2
             className="font-semibold tracking-[-0.02em] leading-[1.1] mx-auto"
