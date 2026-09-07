@@ -5,18 +5,20 @@ import markAsset from "@/assets/agentix-mark.png.asset.json";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Agentix — Quietly engineering what comes next." },
+      { title: "Agentix — Defence. Cyber. Security." },
       {
         name: "description",
         content:
-          "Agentix is a Cyprus-based technology development company designing high-performance software frameworks and intelligent systems. Currently in stealth.",
+          "Agentix connects specialised technology, software and security capabilities with defence and government procurement opportunities.",
       },
-      { property: "og:title", content: "Agentix — Stealth Phase" },
+      { property: "og:title", content: "Agentix — Defence. Cyber. Security." },
       {
         property: "og:description",
         content:
-          "High-performance software frameworks and intelligent systems. Engineered in Limassol, Cyprus.",
+          "Strategic integration for complex procurement. Technology, software and security capabilities aligned with defence and government requirements.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Index,
@@ -62,7 +64,7 @@ function Index() {
               className="pulse-dot inline-block w-1.5 h-1.5 rounded-full"
               style={{ backgroundColor: accent }}
             />
-            <span>[ STEALTH PHASE // PROTOCOL ACTIVATED ]</span>
+            <span>DEFENCE · CYBER · SECURITY</span>
           </div>
           <div
             className="sm:hidden flex items-center gap-2 font-mono-tech text-[10px]"
@@ -72,12 +74,12 @@ function Index() {
               className="pulse-dot inline-block w-1.5 h-1.5 rounded-full"
               style={{ backgroundColor: accent }}
             />
-            STEALTH
+            AGENTIX
           </div>
         </div>
       </header>
 
-      {/* HERO */}
+      {/* 01 — HERO */}
       <section className="relative overflow-hidden" style={{ borderBottom: `1px solid ${smoke}` }}>
         <div
           aria-hidden
@@ -116,28 +118,32 @@ function Index() {
               className="pulse-dot inline-block w-1.5 h-1.5 rounded-full"
               style={{ backgroundColor: accent }}
             />
-            00 // Introduction
+            01 // Introduction
+          </div>
+          <div
+            className="font-mono-tech text-[11px] uppercase tracking-[0.3em] mb-8"
+            style={{ color: accent }}
+          >
+            DEFENCE. CYBER. SECURITY.
           </div>
           <h1
             className="font-semibold tracking-[-0.03em] leading-[1.02] max-w-[980px]"
             style={{ color: off, fontSize: "clamp(2.75rem, 6.5vw, 5.75rem)" }}
           >
-            Quietly engineering
+            Strategic integration
             <br />
-            what comes next.
+            for complex procurement.
           </h1>
           <p
-            className="mt-10 text-base md:text-lg leading-relaxed whitespace-pre-line"
+            className="mt-10 text-base md:text-lg leading-relaxed"
             style={{ color: slate, maxWidth: "720px" }}
           >
-            Agentix is a technology development company.{"\u00a0"}{"\n"}
-            We design high-performance software frameworks and intelligent systems, currently operating in
-            stealth as we prepare our foundational ecosystem.
+            Agentix connects specialised technology, software and security capabilities with defence and government procurement opportunities.
           </p>
         </div>
       </section>
 
-      {/* ABOUT */}
+      {/* 02 — WHAT WE DO */}
       <section style={{ borderBottom: `1px solid ${smoke}` }}>
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] grid grid-cols-1 md:grid-cols-12 gap-12">
           <div className="md:col-span-4">
@@ -145,7 +151,7 @@ function Index() {
               className="font-mono-tech text-[11px] uppercase tracking-[0.25em]"
               style={{ color: slate }}
             >
-              01 // Architecture
+              02 // What We Do
             </div>
           </div>
           <div className="md:col-span-7 md:col-start-6">
@@ -153,57 +159,53 @@ function Index() {
               className="font-semibold tracking-[-0.02em] leading-[1.1]"
               style={{ color: off, fontSize: "clamp(2rem, 4vw, 3.25rem)" }}
             >
-              Purpose-built technology.
+              Technology. Procurement. Integration.
             </h2>
             <div
               className="mt-10 space-y-6 text-base md:text-lg leading-relaxed"
               style={{ color: slate }}
             >
               <p>
-                Great systems aren't rushed; they are deliberately engineered. At Agentix, our team
-                of developers and architects is dedicated to solving complex digital infrastructure
-                challenges from our hub in Cyprus.
+                Agentix operates across the intersection of defence requirements and specialised technology.
               </p>
               <p>
-                We prefer to let the architecture speak for itself. Right now, our focus is entirely
-                internal—building, refining, and testing a new paradigm of digital interaction. We
-                are quiet because we are busy.
+                We identify relevant capabilities, connect them with the right partners and build the commercial and technical pathways required to bring them into procurement and deployment.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* SPECIALIZATIONS */}
+      {/* 03 — AREAS OF FOCUS */}
       <section style={{ borderBottom: `1px solid ${smoke}` }}>
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px]">
           <div
             className="font-mono-tech text-[11px] uppercase tracking-[0.25em] mb-16"
             style={{ color: slate }}
           >
-            02 // Areas of Focus
+            03 // Areas of Focus
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 n: "001",
-                t: "Core Infrastructure",
-                d: "Developing highly scalable, low-latency backends capable of supporting heavy data loads and seamless real-time processing.",
+                t: "DEFENCE TECHNOLOGY",
+                d: "Specialised equipment, systems and mission-critical technologies for defence and government requirements.",
               },
               {
                 n: "002",
-                t: "Behavioral Ecosystems",
-                d: "Mapping sophisticated engagement loops and logic structures that make digital spaces feel more intuitive, responsive, and dynamic.",
+                t: "CYBER & SECURITY",
+                d: "Cybersecurity, secure infrastructure, intelligence and protective technologies.",
               },
               {
                 n: "003",
-                t: "Systemic Optimization",
-                d: "Refining the subtle mechanics where user experience and complex software engineering meet, ensuring stability at scale.",
+                t: "SOFTWARE & SYSTEMS",
+                d: "Specialised software, platforms, AI-enabled systems and bespoke technology solutions for demanding operational environments.",
               },
               {
                 n: "004",
-                t: "Strategic Defense Procurement",
-                d: "Serving as the integration layer between elite global suppliers and complex defense ecosystems. We engineer bespoke procurement strategies backed by uncompromising quality control and precise, secure project management.",
+                t: "PROCUREMENT & INTEGRATION",
+                d: "Connecting requirements with qualified suppliers, OEMs and technology partners — from identification through delivery.",
               },
             ].map((c, i) => (
               <div
@@ -232,7 +234,7 @@ function Index() {
         </div>
       </section>
 
-      {/* STATUS */}
+      {/* 04 — SOFTWARE */}
       <section style={{ borderBottom: `1px solid ${smoke}` }}>
         <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] grid grid-cols-1 md:grid-cols-12 gap-12">
           <div className="md:col-span-4">
@@ -240,7 +242,7 @@ function Index() {
               className="font-mono-tech text-[11px] uppercase tracking-[0.25em]"
               style={{ color: slate }}
             >
-              03 // Timeline
+              04 // Software
             </div>
           </div>
           <div className="md:col-span-7 md:col-start-6">
@@ -248,27 +250,175 @@ function Index() {
               className="font-semibold tracking-[-0.02em] leading-[1.1]"
               style={{ color: off, fontSize: "clamp(2rem, 4vw, 3.25rem)" }}
             >
-              In Development.
+              Software is capability.
             </h2>
-            <p
-              className="mt-10 text-base md:text-lg leading-relaxed"
-              style={{ color: slate }}
-            >
-              Our current project is taking shape behind the scenes. We are steadily moving toward a
-              phase where our frameworks will be ready for integration. Until then, we remain
-              focused on the code.
-            </p>
             <div
-              className="mt-12 flex items-center gap-3 font-mono-tech text-[11px] uppercase tracking-[0.25em]"
+              className="mt-10 space-y-6 text-base md:text-lg leading-relaxed"
               style={{ color: slate }}
             >
-              <span
-                className="pulse-dot inline-block w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: accent }}
-              />
-              System status: building
+              <p>Not every defence requirement is hardware.</p>
+              <p>
+                Agentix works with specialised software and technology teams to deliver platforms, integrations and bespoke systems where conventional solutions are insufficient.
+              </p>
+            </div>
+            <div
+              className="mt-12 flex flex-wrap gap-6 font-mono-tech text-[11px] uppercase tracking-[0.2em]"
+              style={{ color: accent }}
+            >
+              <span>Systems</span>
+              <span>Intelligence</span>
+              <span>Automation</span>
+              <span>Integration</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* 05 — PROCUREMENT */}
+      <section style={{ borderBottom: `1px solid ${smoke}` }}>
+        <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] grid grid-cols-1 md:grid-cols-12 gap-12">
+          <div className="md:col-span-4">
+            <div
+              className="font-mono-tech text-[11px] uppercase tracking-[0.25em]"
+              style={{ color: slate }}
+            >
+              05 // Procurement
+            </div>
+          </div>
+          <div className="md:col-span-7 md:col-start-6">
+            <h2
+              className="font-semibold tracking-[-0.02em] leading-[1.1]"
+              style={{ color: off, fontSize: "clamp(2rem, 4vw, 3.25rem)" }}
+            >
+              From requirement to capability.
+            </h2>
+            <div
+              className="mt-10 space-y-6 text-base md:text-lg leading-relaxed"
+              style={{ color: slate }}
+            >
+              <p>
+                We work across the procurement chain — identifying requirements, sourcing capable partners, establishing technical fit and coordinating the path toward qualification, contracting and delivery.
+              </p>
+            </div>
+            <div
+              className="mt-12 flex flex-wrap items-center gap-4 md:gap-6 font-mono-tech text-[11px] uppercase tracking-[0.2em]"
+              style={{ color: off }}
+            >
+              <span>Requirement</span>
+              <span style={{ color: smoke }}>→</span>
+              <span>Capability</span>
+              <span style={{ color: smoke }}>→</span>
+              <span>Integration</span>
+              <span style={{ color: smoke }}>→</span>
+              <span>Procurement</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 06 — NETWORK */}
+      <section style={{ borderBottom: `1px solid ${smoke}` }}>
+        <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] grid grid-cols-1 md:grid-cols-12 gap-12">
+          <div className="md:col-span-4">
+            <div
+              className="font-mono-tech text-[11px] uppercase tracking-[0.25em]"
+              style={{ color: slate }}
+            >
+              06 // Network
+            </div>
+          </div>
+          <div className="md:col-span-7 md:col-start-6">
+            <h2
+              className="font-semibold tracking-[-0.02em] leading-[1.1]"
+              style={{ color: off, fontSize: "clamp(2rem, 4vw, 3.25rem)" }}
+            >
+              The right capability is rarely in one place.
+            </h2>
+            <div
+              className="mt-10 space-y-6 text-base md:text-lg leading-relaxed"
+              style={{ color: slate }}
+            >
+              <p>
+                Agentix brings together selected manufacturers, OEMs, software companies, cybersecurity specialists and technology partners across multiple markets.
+              </p>
+              <p>Our role is to find the right combination.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 07 — OPERATING PRINCIPLE */}
+      <section style={{ borderBottom: `1px solid ${smoke}` }}>
+        <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] grid grid-cols-1 md:grid-cols-12 gap-12">
+          <div className="md:col-span-4">
+            <div
+              className="font-mono-tech text-[11px] uppercase tracking-[0.25em]"
+              style={{ color: slate }}
+            >
+              07 // Operating Principle
+            </div>
+          </div>
+          <div className="md:col-span-7 md:col-start-6">
+            <h2
+              className="font-semibold tracking-[-0.02em] leading-[1.1]"
+              style={{ color: off, fontSize: "clamp(2rem, 4vw, 3.25rem)" }}
+            >
+              Selective by design.
+            </h2>
+            <div
+              className="mt-10 space-y-6 text-base md:text-lg leading-relaxed"
+              style={{ color: slate }}
+            >
+              <p>We don't publish every programme, partner or capability.</p>
+              <p>
+                Agentix works selectively on defence, cyber, security and technology opportunities where specialised knowledge and international relationships can make the difference.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 08 — FINAL CTA */}
+      <section style={{ borderBottom: `1px solid ${smoke}` }}>
+        <div className="mx-auto max-w-[1400px] px-8 md:px-12 py-36 md:py-[140px] text-center">
+          <div
+            className="font-mono-tech text-[11px] uppercase tracking-[0.25em] mb-10"
+            style={{ color: slate }}
+          >
+            08 // Enquiry
+          </div>
+          <h2
+            className="font-semibold tracking-[-0.02em] leading-[1.1] mx-auto"
+            style={{ color: off, fontSize: "clamp(2rem, 4vw, 3.25rem)", maxWidth: "900px" }}
+          >
+            A requirement. A capability. A conversation.
+          </h2>
+          <p
+            className="mt-8 text-base md:text-lg leading-relaxed mx-auto"
+            style={{ color: slate, maxWidth: "640px" }}
+          >
+            For defence organisations, government-facing programmes, technology companies and specialised suppliers.
+          </p>
+          <a
+            href="mailto:nfoi@agentix-tech.net"
+            className="mt-12 inline-flex items-center gap-3 font-mono-tech text-sm uppercase tracking-[0.2em] px-8 py-4 rounded-sm transition-colors duration-200"
+            style={{
+              color: off,
+              border: `1px solid ${smoke}`,
+              backgroundColor: "transparent",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(16, 185, 129, 0.08)";
+              e.currentTarget.style.borderColor = accent;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+              e.currentTarget.style.borderColor = smoke;
+            }}
+          >
+            Start a confidential enquiry
+            <span style={{ color: accent }}>→</span>
+          </a>
         </div>
       </section>
 
@@ -294,13 +444,13 @@ function Index() {
               className="mt-4 font-mono-tech text-xs leading-relaxed"
               style={{ color: slate }}
             >
-              Tech Hub // Limassol, Cyprus
+              Defence · Cyber · Security
             </div>
             <div
               className="mt-2 font-mono-tech text-xs leading-relaxed"
               style={{ color: slate }}
             >
-              Operational Phase: Stealth / Infrastructure Verification
+              Limassol, Cyprus
             </div>
           </div>
           <div className="md:text-right">
